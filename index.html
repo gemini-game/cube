@@ -318,7 +318,7 @@ function addLog(v, idxs, colors) {
     var list = document.getElementById('log-list'); if(list.querySelector('.italic')) list.innerHTML = '';
     var item = document.createElement('div'); 
     item.className = 'bg-white p-4 rounded-xl border-2 border-gray-100 flex justify-between items-center shadow-sm border-l-4 ' + (v==='TOP'?'border-l-blue-500':'border-l-indigo-500');
-    var info = document.createElement('div'); info.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2">ID: '+idxs.join(',')+'</span>';
+    var 정보 = document.createElement('div'); 정보.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2">ID: '+idxs.join(',')+'</span>';
     var res = document.createElement('div'); res.className = 'flex gap-1.5';
     var cnt = {1:0, 2:0, 3:0, 4:0}; for(var i=0; i<colors.length; i++) { if(colors[i]>0) cnt[colors[i]]++; }
     var empty = true;
@@ -329,7 +329,7 @@ function addLog(v, idxs, colors) {
         }
     }
     if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
-    item.appendChild(info); item.appendChild(res); list.insertBefore(item, list.firstChild);
+    item.appendChild(정보); item.appendChild(res); list.insertBefore(item, list.firstChild);
 }
 
 window.submitAnswer = function() {
