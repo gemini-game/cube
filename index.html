@@ -21,7 +21,7 @@
         .brush-active { border-color: #000 !important; transform: scale(1.1); }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 font-sans text-gray-900">
+<body class="bg-gray-100 min-h-screen p-4 font-sans text-gray-900" onkeydown="handleGlobalKey(event)">
 <div id="app" class="max-w-5xl mx-auto bg-white rounded-xl shadow-2xl p-6 border border-gray-200">
     <header class="text-center mb-8 border-b pb-4">
         <h1 class="text-3xl font-extrabold tracking-tighter uppercase">CUBE HELL</h1>
@@ -76,7 +76,7 @@
                 </div>
                 <div class="text-center">
                     <div id="search-grid" class="cube-grid mb-6"></div>
-                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask</button>
+                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask (Enter/Space)</button>
                     <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
                 </div>
             </div>
@@ -90,7 +90,7 @@
                     <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
                     <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
                 </div>
-                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer</button>
+                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer (Enter/Space)</button>
             </div>
         </div>
         <div class="lg:col-span-7 flex flex-col">
@@ -101,6 +101,17 @@
         </div>
     </div>
 </div>
+
+<!-- 커스텀 모달 UI -->
+<div id="custom-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+        <div id="modal-icon" class="text-5xl mb-4"></div>
+        <h2 id="modal-title" class="text-2xl font-black mb-2 uppercase"></h2>
+        <p id="modal-msg" class="text-gray-600 mb-6 font-bold"></p>
+        <button id="modal-btn" class="w-full py-4 bg-black text-white rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-colors"></button>
+    </div>
+</div>
+
 <script>
 var game = {
     grid: [], occupied: [], currentFloor: 2,
@@ -168,7 +179,38 @@ var game = {
     }
 };
 
-var obsVal = 1, playVal = 1, currentView = 'TOP', selectedIdx = [], brushColor = 1, userGrid = [[0,0,0],[0,0,0],[0,0,0]];
+var obsVal = 1, playVal = 1, currentView = 'TOP', selectedIdx = [], brushColor = 1, userGrid = [[0,0,0],[0,0,0],[0,0,0]], currentTab = 'search';
+
+function showModal(title, msg, btnText, callback, icon) {
+    var m = document.getElementById('custom-modal');
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-msg').innerText = msg;
+    document.getElementById('modal-btn').innerText = btnText;
+    document.getElementById('modal-icon').innerText = icon || 'ℹ️';
+    m.style.display = 'flex';
+    m.classList.remove('hidden');
+    document.getElementById('modal-btn').onclick = function() {
+        m.style.display = 'none';
+        m.classList.add('hidden');
+        if(callback) callback();
+    };
+}
+
+window.handleGlobalKey = function(e) {
+    if(document.getElementById('custom-modal').style.display === 'flex') {
+        if(e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            document.getElementById('modal-btn').click();
+        }
+        return;
+    }
+    if(e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if(currentTab === 'search') handleAsk();
+        else if(currentTab === 'submit') submitAnswer();
+    }
+};
+
 window.selectObs = function(n) { obsVal = n; if(n === 0) { initAndStart(); return; } showStep(2); };
 window.selectPlay = function(n) { playVal = n; showStep(3); };
 window.showStep = function(s) { var steps = document.querySelectorAll('.mode-step'); for(var i=0; i<steps.length; i++) steps[i].classList.remove('active'); document.getElementById('step-'+s).classList.add('active'); };
@@ -179,6 +221,7 @@ window.initAndStart = function() {
     initGrids(); setView('TOP'); setBrush(1);
     if(playVal === 2) { document.getElementById('btn-ask').classList.add('hidden'); document.getElementById('btn-next-puzzle').classList.remove('hidden'); }
 };
+
 function renderTest() {
     document.getElementById('teststage').classList.remove('hidden');
     for(var z=0; z<3; z++) {
@@ -190,6 +233,7 @@ function renderTest() {
         }
     }
 }
+
 function initGrids() {
     var sGrid = document.getElementById('search-grid'); sGrid.innerHTML = '';
     for(var i=1; i<=9; i++) {
@@ -221,6 +265,7 @@ function initGrids() {
         })(i);
     }
 }
+
 window.setView = function(v) {
     currentView = v; var btns = document.querySelectorAll('.v-btn');
     for(var i=0; i<btns.length; i++) btns[i].classList.remove('bg-blue-600', 'text-white');
@@ -228,17 +273,21 @@ window.setView = function(v) {
     selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
     for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
 };
+
 window.setTab = function(t) {
+    currentTab = t;
     document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
     document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
     document.getElementById('view-section').classList.toggle('hidden', t!=='search');
     document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
 };
+
 window.setBrush = function(c) { 
     brushColor = c; var tools = document.querySelectorAll('.brush-tool');
     for(var i=0; i<tools.length; i++) tools[i].classList.remove('brush-active');
     document.getElementById('brush-'+c).classList.add('brush-active'); 
 };
+
 window.handleAsk = function() {
     if(selectedIdx.length < obsVal) return;
     var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
@@ -246,6 +295,7 @@ window.handleAsk = function() {
     selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
     for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
 };
+
 window.handlePuzzleNext = function() {
     var v, picked = [];
     if(Math.random() < 0.4) {
@@ -263,6 +313,7 @@ window.handlePuzzleNext = function() {
     var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
     addLog(v, picked, colors);
 };
+
 function addLog(v, idxs, colors) {
     var list = document.getElementById('log-list'); if(list.querySelector('.italic')) list.innerHTML = '';
     var item = document.createElement('div'); 
@@ -280,6 +331,7 @@ function addLog(v, idxs, colors) {
     if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
     item.appendChild(info); item.appendChild(res); list.insertBefore(item, list.firstChild);
 }
+
 window.submitAnswer = function() {
     var ok = true; 
     for(var y=0; y<3; y++) {
@@ -292,11 +344,20 @@ window.submitAnswer = function() {
     }
     if(ok) {
         if(game.currentFloor > 0) { 
-            game.currentFloor--; alert('Success: ' + (game.currentFloor+1) + 'F Analysis Start'); 
-            document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
-            userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
-        } else { alert('Clear: Victory'); location.reload(); }
-    } else { alert('Error: Structure Mismatch'); }
+            var floorName = (game.currentFloor + 1) + 'F';
+            showModal(floorName + ' 격파!', '구조 분석에 성공함. ' + game.currentFloor + 'F 분석을 시작함.', '다음 층으로', function(){
+                game.currentFloor--;
+                document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
+                userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
+            }, '🔥');
+        } else { 
+            showModal('Mission Clear!', '모든 층의 구조 분석 완료. 큐브 지옥을 탈출함!', '새 게임 시작', function(){
+                location.페이지를 새로고침();
+            }, '🎉');
+        }
+    } else { 
+        showModal('Error', '설계와 일치하지 않는 구조가 발견됨. 다시 시도 바람.', '재시도', null, '❌');
+    }
 };
 </script>
 </body>
