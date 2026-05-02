@@ -7,18 +7,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .cube-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 180px; margin: 0 auto; }
-        .cube-cell { aspect-ratio: 1; border: 2px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.2rem; user-select: none; border-radius: 4px; }
+        .cube-cell { aspect-ratio: 1; border: 2px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.2rem; user-select: none; border-radius: 4px; transition: all 0.1s ease; }
         .color-0 { background-color: #f3f4f6; color: #999; }
         .color-1 { background-color: #ef4444; color: white; }
         .color-2 { background-color: #facc15; color: black; }
         .color-3 { background-color: #22c55e; color: white; }
         .color-4 { background-color: #3b82f6; color: white; }
         .selected { outline: 3px solid #000; z-index: 10; transform: scale(1.05); }
-        .log-container { height: 480px; overflow-y: auto; }
+        .log-container { height: 480px; overflow-y: auto; scroll-behavior: smooth; }
         .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: bold; }
         .mode-step { display: none; }
         .mode-step.active { display: block; }
-        .brush-active { border-color: #000 !important; transform: scale(1.1); }
+        .brush-active { border-color: #000 !important; transform: scale(1.15); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        /* 터치 및 마우스 반응 개선 */
+        .cube-cell:active { transform: scale(0.95); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 font-sans text-gray-900" onkeydown="handleGlobalKey(event)">
@@ -26,99 +28,113 @@
     <header class="text-center mb-8 border-b pb-4">
         <h1 class="text-3xl font-extrabold tracking-tighter uppercase">CUBE HELL</h1>
     </header>
+
+    <!-- 초기 설정 단계 -->
     <div id="prestage" class="max-w-md mx-auto py-10">
         <div id="step-1" class="mode-step active space-y-6 text-center">
             <h2 class="text-xl font-bold">1. 관측 단위 설정</h2>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
-                <button onclick="selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
-                <button onclick="selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold">테스트 모드</button>
+                <button onclick="selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold transition-all">1개씩 관측</button>
+                <button onclick="selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold transition-all">3개씩 관측</button>
+                <button onclick="selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold hover:bg-red-100 transition-all">테스트 모드 (전체 공개)</button>
             </div>
         </div>
         <div id="step-2" class="mode-step space-y-6 text-center">
             <h2 class="text-xl font-bold">2. 게임 진행 방식</h2>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
-                <button onclick="selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
+                <button onclick="selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold transition-all">수동 질문 모드</button>
+                <button onclick="selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold transition-all">자동 힌트 모드</button>
             </div>
         </div>
         <div id="step-3" class="mode-step space-y-8 text-center">
-            <h2 class="text-xl font-bold">준비 완료</h2>
-            <button onclick="initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase">Game Start</button>
+            <h2 class="text-xl font-bold uppercase tracking-widest">Ready to Hell</h2>
+            <button onclick="initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase hover:bg-gray-800 transition-all">Game Start</button>
         </div>
     </div>
+
+    <!-- 디버그 스테이지 -->
     <div id="teststage" class="hidden space-y-8">
         <div class="flex justify-between items-center border-b-2 border-red-600 pb-4">
             <h2 class="text-2xl font-black text-red-600 uppercase">Structure Debug</h2>
-            <button onclick="location.reload()" class="px-4 py-2 bg-gray-200 rounded font-bold">Menu</button>
+            <button onclick="location.reload()" class="px-4 py-2 bg-gray-200 rounded font-bold hover:bg-gray-300 transition-all">Main Menu</button>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div><h3 class="font-bold mb-4 uppercase">Layer 3 (Top)</h3><div id="test-grid-2" class="cube-grid"></div></div>
-            <div><h3 class="font-bold mb-4 uppercase">Layer 2 (Mid)</h3><div id="test-grid-1" class="cube-grid"></div></div>
-            <div><h3 class="font-bold mb-4 uppercase">Layer 1 (Bottom)</h3><div id="test-grid-0" class="cube-grid"></div></div>
+            <div><h3 class="font-bold mb-4 uppercase text-gray-500">Layer 3 (Top)</h3><div id="test-grid-2" class="cube-grid"></div></div>
+            <div><h3 class="font-bold mb-4 uppercase text-gray-500">Layer 2 (Mid)</h3><div id="test-grid-1" class="cube-grid"></div></div>
+            <div><h3 class="font-bold mb-4 uppercase text-gray-500">Layer 1 (Bottom)</h3><div id="test-grid-0" class="cube-grid"></div></div>
         </div>
     </div>
+
+    <!-- 메인 게임 스테이지 -->
     <div id="gamestage" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- 왼쪽 컨트롤러 -->
         <div class="lg:col-span-5 space-y-6 border-r pr-6">
             <div class="flex border-b text-sm mb-4">
-                <button onclick="setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase">Search</button>
-                <button onclick="setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase">Submit</button>
+                <button onclick="setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase transition-all">Search</button>
+                <button onclick="setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase transition-all">Submit</button>
             </div>
+
+            <!-- 관측 섹션 -->
             <div id="view-section">
                 <div class="mb-6 bg-gray-50 p-4 rounded-xl border">
                     <div class="grid grid-cols-5 gap-1">
-                        <button onclick="setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
-                        <button onclick="setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
-                        <button onclick="setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
-                        <button onclick="setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
-                        <button onclick="setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
+                        <button onclick="setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black transition-all" id="v-TOP">TOP</button>
+                        <button onclick="setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black transition-all" id="v-SOUTH">SOUTH</button>
+                        <button onclick="setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black transition-all" id="v-NORTH">NORTH</button>
+                        <button onclick="setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black transition-all" id="v-EAST">EAST</button>
+                        <button onclick="setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black transition-all" id="v-WEST">WEST</button>
                     </div>
                 </div>
                 <div class="text-center">
                     <div id="search-grid" class="cube-grid mb-6"></div>
-                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask (Enter/Space)</button>
-                    <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
+                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase hover:bg-blue-700 transition-all">Ask (Enter/Space)</button>
+                    <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase hover:bg-indigo-700 transition-all">Next Hint</button>
                 </div>
             </div>
+
+            <!-- 제출 섹션 -->
             <div id="submit-section" class="hidden space-y-6 text-center">
-                <div id="target-floor-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase">Target: 3F</div>
+                <div id="target-floor-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase tracking-tighter">Target: 3F</div>
                 <div id="submit-grid" class="cube-grid mb-8 scale-110"></div>
                 <div class="flex justify-center gap-3 bg-gray-50 p-4 rounded-xl border">
-                    <button onclick="setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
-                    <button onclick="setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool" id="brush-1"></button>
-                    <button onclick="setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool" id="brush-2"></button>
-                    <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
-                    <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
+                    <button onclick="setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool transition-all" id="brush-0">X</button>
+                    <button onclick="setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool transition-all" id="brush-1"></button>
+                    <button onclick="setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool transition-all" id="brush-2"></button>
+                    <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool transition-all" id="brush-3"></button>
+                    <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool transition-all" id="brush-4"></button>
                 </div>
-                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer (Enter/Space)</button>
+                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase hover:bg-red-700 transition-all">Submit Answer (Enter/Space)</button>
             </div>
         </div>
+
+        <!-- 오른쪽 로그 -->
         <div class="lg:col-span-7 flex flex-col">
             <h3 class="font-black text-xl mb-4 border-b-2 border-gray-900 pb-2 uppercase tracking-widest">Logs</h3>
             <div id="log-list" class="log-container space-y-3">
-                <div class="text-center text-gray-300 py-32 italic">No Data.</div>
+                <div class="text-center text-gray-300 py-32 italic">No Observational Data.</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 커스텀 모달 UI -->
-<div id="custom-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
-        <div id="modal-icon" class="text-5xl mb-4"></div>
-        <h2 id="modal-title" class="text-2xl font-black mb-2 uppercase"></h2>
-        <p id="modal-msg" class="text-gray-600 mb-6 font-bold"></p>
-        <button id="modal-btn" class="w-full py-4 bg-black text-white rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-colors"></button>
+<!-- 범용 커스텀 모달 UI -->
+<div id="custom-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[100] p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border-4 border-black">
+        <div id="modal-icon" class="text-6xl mb-4"></div>
+        <h2 id="modal-title" class="text-2xl font-black mb-2 uppercase tracking-tight"></h2>
+        <p id="modal-msg" class="text-gray-600 mb-6 font-bold leading-relaxed"></p>
+        <button id="modal-btn" class="w-full py-4 bg-black text-white rounded-xl font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg active:scale-95"></button>
     </div>
 </div>
 
 <script>
+// Standalone 모드 전역 변수 관리
 var game = {
     grid: [], occupied: [], currentFloor: 2,
     init: function() { this.grid = []; for(var z=0; z<3; z++) { this.grid[z] = []; for(var y=0; y<3; y++) { this.grid[z][y] = [0, 0, 0]; } } },
     generate: function() {
         var success = false; var limit = 0;
-        while(!success && limit < 500) {
+        while(!success && limit < 1000) {
             limit++; this.init(); this.occupied = [];
             var candidates = []; for(var x=0; x<3; x++) for(var y=0; y<3; y++) candidates.push({x:x, y:y, z:0});
             while(this.occupied.length < 20 && candidates.length > 0) {
@@ -131,7 +147,7 @@ var game = {
             if(this.occupied.length < 20) continue;
             var cSuccess = true;
             for(var c=1; c<=4; c++) {
-                var uncolored = this.occupied.filter(function(o){ return o.color === null; });
+                var uncolored = this.occupied.filter(o => o.color === null);
                 if(uncolored.length === 0) { cSuccess = false; break; }
                 var start = uncolored[Math.floor(Math.random() * uncolored.length)];
                 start.color = c; this.grid[start.z][start.y][start.x] = c;
@@ -147,12 +163,12 @@ var game = {
     },
     getAdj: function(color) {
         var res = []; var self = this;
-        this.occupied.filter(function(o){ return o.color === color; }).forEach(function(p){
+        this.occupied.filter(o => o.color === color).forEach(p => {
             var ds = [{x:1,y:0,z:0},{x:-1,y:0,z:0},{x:0,y:1,z:0},{x:0,y:-1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:-1}];
-            ds.forEach(function(d){
+            ds.forEach(d => {
                 var nx=p.x+d.x, ny=p.y+d.y, nz=p.z+d.z;
                 if(nx>=0&&nx<3&&ny>=0&&ny<3&&nz>=0&&nz<3) {
-                    var f = self.occupied.filter(function(o){ return o.x===nx&&o.y===ny&&o.z===nz&&o.color===null; })[0];
+                    var f = self.occupied.find(o => o.x===nx&&o.y===ny&&o.z===nz&&o.color===null);
                     if(f) res.push(f);
                 }
             });
@@ -189,6 +205,7 @@ function showModal(title, msg, btnText, callback, icon) {
     document.getElementById('modal-icon').innerText = icon || 'ℹ️';
     m.style.display = 'flex';
     m.classList.remove('hidden');
+    document.getElementById('modal-btn').focus();
     document.getElementById('modal-btn').onclick = function() {
         m.style.display = 'none';
         m.classList.add('hidden');
@@ -196,6 +213,7 @@ function showModal(title, msg, btnText, callback, icon) {
     };
 }
 
+// 전역 키보드 제어
 window.handleGlobalKey = function(e) {
     if(document.getElementById('custom-modal').style.display === 'flex') {
         if(e.key === 'Enter' || e.key === ' ') {
@@ -213,7 +231,7 @@ window.handleGlobalKey = function(e) {
 
 window.selectObs = function(n) { obsVal = n; if(n === 0) { initAndStart(); return; } showStep(2); };
 window.selectPlay = function(n) { playVal = n; showStep(3); };
-window.showStep = function(s) { var steps = document.querySelectorAll('.mode-step'); for(var i=0; i<steps.length; i++) steps[i].classList.remove('active'); document.getElementById('step-'+s).classList.add('active'); };
+window.showStep = function(s) { document.querySelectorAll('.mode-step').forEach(el => el.classList.remove('active')); document.getElementById('step-'+s).classList.add('active'); };
 window.initAndStart = function() {
     game.generate(); document.getElementById('prestage').classList.add('hidden');
     if(obsVal === 0) { renderTest(); return; }
@@ -245,10 +263,10 @@ function initGrids() {
                 if(p > -1) { selectedIdx.splice(p, 1); c.classList.remove('selected'); }
                 else if(selectedIdx.length < obsVal) { selectedIdx.push(idx); c.classList.add('selected'); }
                 else if(obsVal === 1) { 
-                    selectedIdx = [idx]; var cells = sGrid.querySelectorAll('.cube-cell');
-                    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
+                    selectedIdx = [idx]; document.querySelectorAll('#search-grid .cube-cell').forEach(el => el.classList.remove('selected'));
                     c.classList.add('selected');
                 }
+                // 자동 관측 모드(Enter 유도)
             };
             sGrid.appendChild(c);
         })(i);
@@ -267,11 +285,10 @@ function initGrids() {
 }
 
 window.setView = function(v) {
-    currentView = v; var btns = document.querySelectorAll('.v-btn');
-    for(var i=0; i<btns.length; i++) btns[i].classList.remove('bg-blue-600', 'text-white');
-    document.getElementById('v-'+v).classList.add('bg-blue-600', 'text-white');
-    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
+    currentView = v; document.querySelectorAll('.v-btn').forEach(el => el.classList.remove('bg-blue-600', 'text-white', 'shadow-inner'));
+    var target = document.getElementById('v-'+v);
+    target.classList.add('bg-blue-600', 'text-white', 'shadow-inner');
+    selectedIdx = []; document.querySelectorAll('#search-grid .cube-cell').forEach(el => el.classList.remove('selected'));
 };
 
 window.setTab = function(t) {
@@ -283,17 +300,16 @@ window.setTab = function(t) {
 };
 
 window.setBrush = function(c) { 
-    brushColor = c; var tools = document.querySelectorAll('.brush-tool');
-    for(var i=0; i<tools.length; i++) tools[i].classList.remove('brush-active');
+    brushColor = c; 
+    document.querySelectorAll('.brush-tool').forEach(el => el.classList.remove('brush-active')); 
     document.getElementById('brush-'+c).classList.add('brush-active'); 
 };
 
 window.handleAsk = function() {
-    if(selectedIdx.length < obsVal) return;
-    var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
+    if(selectedIdx.length < obsVal && obsVal !== 0) return;
+    var colors = selectedIdx.map(idx => game.getRay(currentView, idx));
     addLog(currentView, selectedIdx, colors);
-    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
+    selectedIdx = []; document.querySelectorAll('#search-grid .cube-cell').forEach(el => el.classList.remove('selected'));
 };
 
 window.handlePuzzleNext = function() {
@@ -303,14 +319,14 @@ window.handlePuzzleNext = function() {
         if(obsVal === 3) {
             var sets = [[1,2,3],[4,5,6],[7,8,9],[1,4,7],[2,5,8],[3,6,9]];
             picked = sets[Math.floor(Math.random() * sets.length)];
-        } else { picked = [Math.floor(Math.random() * 9) + 1]; }
+        } else picked = [Math.floor(Math.random() * 9) + 1];
     } else {
         var sides = ['SOUTH', 'NORTH', 'EAST', 'WEST']; v = sides[Math.floor(Math.random() * 4)];
         var row = 2 - game.currentFloor;
-        if(obsVal === 3) { picked = [row*3 + 1, row*3 + 2, row*3 + 3]; }
-        else { picked = [row*3 + (Math.floor(Math.random() * 3) + 1)]; }
+        if(obsVal === 3) picked = [row*3 + 1, row*3 + 2, row*3 + 3];
+        else picked = [row*3 + (Math.floor(Math.random() * 3) + 1)];
     }
-    var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
+    var colors = picked.map(p => game.getRay(v, p));
     addLog(v, picked, colors);
 };
 
@@ -318,9 +334,9 @@ function addLog(v, idxs, colors) {
     var list = document.getElementById('log-list'); if(list.querySelector('.italic')) list.innerHTML = '';
     var item = document.createElement('div'); 
     item.className = 'bg-white p-4 rounded-xl border-2 border-gray-100 flex justify-between items-center shadow-sm border-l-4 ' + (v==='TOP'?'border-l-blue-500':'border-l-indigo-500');
-    var 정보 = document.createElement('div'); 정보.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2">ID: '+idxs.join(',')+'</span>';
+    var info = document.createElement('div'); info.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2 text-xs">SCAN: '+idxs.join(',')+'</span>';
     var res = document.createElement('div'); res.className = 'flex gap-1.5';
-    var cnt = {1:0, 2:0, 3:0, 4:0}; for(var i=0; i<colors.length; i++) { if(colors[i]>0) cnt[colors[i]]++; }
+    var cnt = {1:0, 2:0, 3:0, 4:0}; colors.forEach(c => { if(c>0) cnt[c]++; });
     var empty = true;
     for(var c=1; c<=4; c++) {
         for(var k=0; k<cnt[c]; k++) {
@@ -328,8 +344,9 @@ function addLog(v, idxs, colors) {
             res.appendChild(b); empty = false;
         }
     }
-    if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
-    item.appendChild(정보); item.appendChild(res); list.insertBefore(item, list.firstChild);
+    if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">No Signal</span>';
+    item.appendChild(info); item.appendChild(res); list.insertBefore(item, list.firstChild);
+    list.scrollTop = 0;
 }
 
 window.submitAnswer = function() {
@@ -345,18 +362,18 @@ window.submitAnswer = function() {
     if(ok) {
         if(game.currentFloor > 0) { 
             var floorName = (game.currentFloor + 1) + 'F';
-            showModal(floorName + ' 격파!', '구조 분석에 성공함. ' + game.currentFloor + 'F 분석을 시작함.', '다음 층으로', function(){
+            showModal(floorName + ' 격파!', '구조 분석 성공. ' + game.currentFloor + 'F 진입 코드를 해독함.', '다음 층으로', function(){
                 game.currentFloor--;
                 document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
                 userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
             }, '🔥');
         } else { 
-            showModal('Mission Clear!', '모든 층의 구조 분석 완료. 큐브 지옥을 탈출함!', '새 게임 시작', function(){
+            showModal('Mission Clear!', '지면층 도달 및 탈출 성공. 큐브의 모든 기믹을 해제함!', '처음으로', function(){
                 location.페이지를 새로고침();
             }, '🎉');
         }
-    } else { 
-        showModal('Error', '설계와 일치하지 않는 구조가 발견됨. 다시 시도 바람.', '재시도', null, '❌');
+    } else {
+        showModal('Error (오답)', '전송된 구조 데이터가 실제 큐브 설계와 다름. 재분석 필요.', '다시 시도', null, '❌');
     }
 };
 </script>
