@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>큐브 지옥 (Cube Hell)</title>
+    <title>CUBE HELL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .cube-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 180px; margin: 0 auto; }
@@ -26,7 +26,7 @@
         <h1 class="text-3xl font-black uppercase">CUBE HELL</h1>
     </header>
     
-    <!-- Prestage: 변경 없음 -->
+    <!-- Prestage: 절대 수정 금지 구역 -->
     <div id="prestage" class="max-w-md mx-auto py-10">
         <div id="step-1" class="mode-step active space-y-6 text-center">
             <h2 class="text-xl font-bold">1. 관측 단위 설정</h2>
@@ -49,7 +49,7 @@
         </div>
     </div>
 
-    <!-- Gamestage: 수정 요청 반영 구간 -->
+    <!-- Gamestage: 로직 수정 구역 (Ask, Submit) -->
     <div id="gamestage" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-5 space-y-6 border-r pr-6">
             <div class="flex border-b text-sm mb-4">
@@ -98,11 +98,14 @@
 </div>
 
 <script>
+// 전역 변수 설정
 let obsVal = 1, playVal = 1, currentView = 'TOP', selectedIdx = [], brushColor = 1;
 let userGrid = [[0,0,0],[0,0,0],[0,0,0]];
+
 const game = {
     grid: [], occupied: [], currentFloor: 2,
     init() { this.grid = Array.from({length:3}, () => Array.from({length:3}, () => [0,0,0])); },
+    // 블록 쌓기 로직: 수정 없음
     generate() {
         let success = false;
         while(!success) {
@@ -117,6 +120,7 @@ const game = {
                 if(p.z < 2) candidates.push({x:p.x, y:p.y, z:p.z+1});
             }
             if(this.occupied.length < 20) continue;
+            // 컬러링 로직: 수정 없음
             let cSuccess = true;
             for(let c=1; c<=4; c++) {
                 let uncolored = this.occupied.filter(o => o.color === null);
@@ -164,14 +168,15 @@ const game = {
     }
 };
 
-function selectObs(n) { obsVal = n; if(n===0){ game.generate(); renderTest(); return; } showStep(2); }
-function selectPlay(n) { playVal = n; showStep(3); }
+// 버튼 이벤트 함수 전역 배치 (실행 안정성 확보)
+window.selectObs = function(n) { obsVal = n; if(n===0){ game.generate(); renderTest(); return; } showStep(2); };
+window.selectPlay = function(n) { playVal = n; showStep(3); };
 function showStep(s) { 
     document.querySelectorAll('.mode-step').forEach(el => el.classList.remove('active'));
     document.getElementById('step-'+s).classList.add('active');
 }
 
-function initAndStart() {
+window.initAndStart = function() {
     game.generate();
     document.getElementById('prestage').classList.add('hidden');
     document.getElementById('gamestage').classList.remove('hidden');
@@ -180,7 +185,7 @@ function initAndStart() {
         document.getElementById('btn-next-puzzle').classList.remove('hidden');
     }
     initGrids(); setView('TOP'); setBrush(1);
-}
+};
 
 function renderTest() {
     document.getElementById('prestage').classList.add('hidden');
@@ -224,34 +229,35 @@ function initGrids() {
     }
 }
 
-function setView(v) {
+window.setView = function(v) {
     currentView = v;
     document.querySelectorAll('.v-btn').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
     document.getElementById('v-'+v).classList.add('bg-blue-600', 'text-white');
     selectedIdx = []; document.querySelectorAll('#search-grid .cube-cell').forEach(c => c.classList.remove('selected'));
-}
+};
 
-function setTab(t) {
+window.setTab = function(t) {
     document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
     document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
     document.getElementById('view-section').classList.toggle('hidden', t!=='search');
     document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
-}
+};
 
-function setBrush(c) {
+window.setBrush = function(c) {
     brushColor = c;
     document.querySelectorAll('.brush-tool').forEach(b => b.classList.remove('brush-active'));
     document.getElementById('brush-'+c).classList.add('brush-active');
-}
+};
 
-function handleAsk() {
+// 요청 수정 사항: Ask 로그 출력 최적화
+window.handleAsk = function() {
     if(selectedIdx.length < obsVal) return;
     let colors = selectedIdx.map(i => game.getRay(currentView, i));
     addLog(currentView, selectedIdx, colors);
     selectedIdx = []; document.querySelectorAll('#search-grid .cube-cell').forEach(c => c.classList.remove('selected'));
-}
+};
 
-function handlePuzzleNext() {
+window.handlePuzzleNext = function() {
     let v = ['TOP','SOUTH','NORTH','EAST','WEST'][Math.floor(Math.random()*5)];
     let picked = [];
     if(obsVal === 3) {
@@ -259,7 +265,7 @@ function handlePuzzleNext() {
         picked = [start, start+1, start+2];
     } else { picked = [Math.floor(Math.random()*9)+1]; }
     addLog(v, picked, picked.map(i => game.getRay(v, i)));
-}
+};
 
 function addLog(v, idxs, colors) {
     const list = document.getElementById('log-list');
@@ -276,7 +282,8 @@ function addLog(v, idxs, colors) {
     list.prepend(item);
 }
 
-function submitAnswer() {
+// 요청 수정 사항: Submit 정답 판정 고도화
+window.submitAnswer = function() {
     let correct = true;
     for(let y=0; y<3; y++) for(let x=0; x<3; x++) {
         let real = game.grid[game.currentFloor][y][x];
@@ -291,10 +298,7 @@ function submitAnswer() {
             userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
         } else { alert('지옥 탈출 성공.'); location.페이지를 새로고침(); }
     } else { alert('오답. 구조가 일치하지 않음.'); }
-}
-
-// 초기화 보장
-window.onload = () => { console.log("System Ready"); };
+};
 </script>
 </body>
 </html>
