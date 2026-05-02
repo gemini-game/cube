@@ -295,7 +295,7 @@ window.submitAnswer = function() {
             game.currentFloor--; alert('Success: ' + (game.currentFloor+1) + 'F Analysis Start'); 
             document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
             userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
-        } else { alert('Clear: Victory'); location.페이지를 새로고침(); }
+        } else { alert('Clear: Victory'); location.reload(); }
     } else { alert('Error: Structure Mismatch'); }
 };
 </script>
