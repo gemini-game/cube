@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CUBE HELL - PROD</title>
-    <!-- Tailwind CSS 로드 보장 -->
+    <title>CUBE HELL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .cube-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 180px; margin: 0 auto; }
@@ -29,31 +28,27 @@
     <header class="text-center mb-8 border-b pb-4">
         <h1 class="text-3xl font-extrabold tracking-tighter uppercase">CUBE HELL</h1>
     </header>
-    
-    <!-- 초기 UI 생략 (동일) -->
     <div id="prestage" class="max-w-md mx-auto py-10">
         <div id="step-1" class="mode-step active space-y-6 text-center">
             <h2 class="text-xl font-bold">1. 관측 단위 설정</h2>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
-                <button onclick="selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
-                <button onclick="selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold">테스트 모드</button>
+                <button onclick="window.gameControls.selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
+                <button onclick="window.gameControls.selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
+                <button onclick="window.gameControls.selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold">테스트 모드</button>
             </div>
         </div>
         <div id="step-2" class="mode-step space-y-6 text-center">
             <h2 class="text-xl font-bold">2. 게임 진행 방식</h2>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
-                <button onclick="selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
+                <button onclick="window.gameControls.selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
+                <button onclick="window.gameControls.selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
             </div>
         </div>
         <div id="step-3" class="mode-step space-y-8 text-center">
             <h2 class="text-xl font-bold">준비 완료</h2>
-            <button onclick="initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase">Game Start</button>
+            <button onclick="window.gameControls.initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase">Game Start</button>
         </div>
     </div>
-
-    <!-- 게임 스테이지 (GitHub 호환을 위해 id 유지) -->
     <div id="teststage" class="hidden space-y-8">
         <div class="flex justify-between items-center border-b-2 border-red-600 pb-4">
             <h2 class="text-2xl font-black text-red-600 uppercase">Structure Debug</h2>
@@ -65,40 +60,39 @@
             <div><h3 class="font-bold mb-4 uppercase">Layer 1 (Bottom)</h3><div id="test-grid-0" class="cube-grid"></div></div>
         </div>
     </div>
-
     <div id="gamestage" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-5 space-y-6 border-r pr-6">
             <div class="flex border-b text-sm mb-4">
-                <button onclick="setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase">Search</button>
-                <button onclick="setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase">Submit</button>
+                <button onclick="window.gameControls.setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase">Search</button>
+                <button onclick="window.gameControls.setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase">Submit</button>
             </div>
             <div id="view-section">
                 <div class="mb-6 bg-gray-50 p-4 rounded-xl border">
                     <div class="grid grid-cols-5 gap-1">
-                        <button onclick="setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
-                        <button onclick="setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
-                        <button onclick="setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
-                        <button onclick="setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
-                        <button onclick="setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
+                        <button onclick="window.gameControls.setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
+                        <button onclick="window.gameControls.setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
+                        <button onclick="window.gameControls.setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
+                        <button onclick="window.gameControls.setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
+                        <button onclick="window.gameControls.setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
                     </div>
                 </div>
                 <div class="text-center">
                     <div id="search-grid" class="cube-grid mb-6"></div>
-                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask (Enter/Space)</button>
-                    <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
+                    <button id="btn-ask" onclick="window.gameControls.handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask (Enter/Space)</button>
+                    <button id="btn-next-puzzle" onclick="window.gameControls.handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
                 </div>
             </div>
             <div id="submit-section" class="hidden space-y-6 text-center">
                 <div id="target-floor-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase">Target: 3F</div>
                 <div id="submit-grid" class="cube-grid mb-8 scale-110"></div>
                 <div class="flex justify-center gap-3 bg-gray-50 p-4 rounded-xl border">
-                    <button onclick="setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
-                    <button onclick="setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool" id="brush-1"></button>
-                    <button onclick="setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool" id="brush-2"></button>
-                    <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
-                    <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
+                    <button onclick="window.gameControls.setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
+                    <button onclick="window.gameControls.setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool" id="brush-1"></button>
+                    <button onclick="window.gameControls.setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool" id="brush-2"></button>
+                    <button onclick="window.gameControls.setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
+                    <button onclick="window.gameControls.setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
                 </div>
-                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer</button>
+                <button onclick="window.gameControls.submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer</button>
             </div>
         </div>
         <div class="lg:col-span-7 flex flex-col">
@@ -109,7 +103,6 @@
         </div>
     </div>
 </div>
-
 <div id="custom-modal">
     <div class="modal-content">
         <h2 id="modal-title" class="text-2xl font-black mb-4"></h2>
@@ -120,10 +113,9 @@
         </div>
     </div>
 </div>
-
 <script>
-// 모든 로직을 DOM 로드 완료 후 실행되도록 래핑
 (function() {
+    "use strict";
     var game = {
         grid: [], occupied: [], currentFloor: 2,
         init: function() { this.grid = []; for(var z=0; z<3; z++) { this.grid[z] = []; for(var y=0; y<3; y++) { this.grid[z][y] = [0, 0, 0]; } } },
@@ -189,35 +181,26 @@
             return 0;
         }
     };
-
     var obsVal = 1, playVal = 1, currentView = 'TOP', selectedIdx = [], brushColor = 1, userGrid = [[0,0,0],[0,0,0],[0,0,0]];
-
-    window.selectObs = function(n) { obsVal = n; if(n === 0) { initAndStart(); return; } showStep(2); };
-    window.selectPlay = function(n) { playVal = n; showStep(3); };
-    window.showStep = function(s) { var steps = document.querySelectorAll('.mode-step'); for(var i=0; i<steps.length; i++) steps[i].classList.remove('active'); document.getElementById('step-'+s).classList.add('active'); };
-    
-    window.initAndStart = function() {
-        game.generate(); document.getElementById('prestage').classList.add('hidden');
-        if(obsVal === 0) { renderTest(); return; }
-        document.getElementById('gamestage').classList.remove('hidden');
-        initGrids(); setView('TOP'); setBrush(1);
-        if(playVal === 2) { document.getElementById('btn-ask').classList.add('hidden'); document.getElementById('btn-next-puzzle').classList.remove('hidden'); }
-    };
-
-    function renderTest() {
-        document.getElementById('teststage').classList.remove('hidden');
-        for(var z=0; z<3; z++) {
-            var grid = document.getElementById('test-grid-'+z); grid.innerHTML = '';
-            for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
-                var c = document.createElement('div'); var val = game.grid[z][y][x];
-                c.className = 'cube-cell color-'+(val === -1 ? 0 : val);
-                c.innerText = val === 0 ? '0' : ''; grid.appendChild(c);
-            }
-        }
+    function showModal(title, msg, btnText, callback, secondaryText, secondaryCallback) {
+        var modal = document.getElementById('custom-modal');
+        if(!modal) return;
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-msg').innerText = msg;
+        var pBtn = document.getElementById('modal-btn-primary');
+        pBtn.innerText = btnText;
+        pBtn.onclick = function() { modal.style.display = 'none'; if(callback) callback(); };
+        var sBtn = document.getElementById('modal-btn-secondary');
+        if(secondaryText) {
+            sBtn.innerText = secondaryText;
+            sBtn.classList.remove('hidden');
+            sBtn.onclick = function() { modal.style.display = 'none'; if(secondaryCallback) secondaryCallback(); };
+        } else { sBtn.classList.add('hidden'); }
+        modal.style.display = 'flex';
     }
-
     function initGrids() {
-        var sGrid = document.getElementById('search-grid'); sGrid.innerHTML = '';
+        var sGrid = document.getElementById('search-grid'); if(!sGrid) return;
+        sGrid.innerHTML = '';
         for(var i=1; i<=9; i++) {
             (function(idx){
                 var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.innerText = idx;
@@ -235,7 +218,8 @@
                 sGrid.appendChild(c);
             })(i);
         }
-        var mGrid = document.getElementById('submit-grid'); mGrid.innerHTML = '';
+        var mGrid = document.getElementById('submit-grid'); if(!mGrid) return;
+        mGrid.innerHTML = '';
         for(var i=0; i<9; i++) {
             (function(idx){
                 var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.id = 'sub-'+idx; c.innerText = 'X';
@@ -247,56 +231,6 @@
             })(i);
         }
     }
-
-    window.setView = function(v) {
-        currentView = v; var btns = document.querySelectorAll('.v-btn');
-        for(var i=0; i<btns.length; i++) btns[i].classList.remove('bg-blue-600', 'text-white');
-        var target = document.getElementById('v-'+v);
-        if(target) target.classList.add('bg-blue-600', 'text-white');
-        selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-        for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-    };
-
-    window.setTab = function(t) {
-        document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
-        document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
-        document.getElementById('view-section').classList.toggle('hidden', t!=='search');
-        document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
-    };
-
-    window.setBrush = function(c) { 
-        brushColor = c; var tools = document.querySelectorAll('.brush-tool');
-        for(var i=0; i<tools.length; i++) tools[i].classList.remove('brush-active');
-        var target = document.getElementById('brush-'+c);
-        if(target) target.classList.add('brush-active'); 
-    };
-
-    window.handleAsk = function() {
-        if(selectedIdx.length < obsVal) return;
-        var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
-        addLog(currentView, selectedIdx, colors);
-        selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-        for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-    };
-
-    window.handlePuzzleNext = function() {
-        var v, picked = [];
-        if(Math.random() < 0.4) {
-            v = 'TOP';
-            if(obsVal === 3) {
-                var sets = [[1,2,3],[4,5,6],[7,8,9],[1,4,7],[2,5,8],[3,6,9]];
-                picked = sets[Math.floor(Math.random() * sets.length)];
-            } else { picked = [Math.floor(Math.random() * 9) + 1]; }
-        } else {
-            var sides = ['SOUTH', 'NORTH', 'EAST', 'WEST']; v = sides[Math.floor(Math.random() * 4)];
-            var row = 2 - game.currentFloor;
-            if(obsVal === 3) { picked = [row*3 + 1, row*3 + 2, row*3 + 3]; }
-            else { picked = [row*3 + (Math.floor(Math.random() * 3) + 1)]; }
-        }
-        var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
-        addLog(v, picked, colors);
-    };
-
     function addLog(v, idxs, colors) {
         var list = document.getElementById('log-list'); if(!list) return;
         if(list.querySelector('.italic')) list.innerHTML = '';
@@ -313,71 +247,104 @@
             }
         }
         if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
-        item.appendChild(정보); item.appendChild(res); list.insertBefore(item, list.firstChild);
+        item.appendChild(info); item.appendChild(res); list.insertBefore(item, list.firstChild);
     }
-
-    window.submitAnswer = function() {
-        var ok = true; 
-        for(var y=0; y<3; y++) {
-            for(var x=0; x<3; x++) {
-                var real = game.grid[game.currentFloor][y][x];
-                var target = (real === -1) ? 0 : real;
-                if(target !== userGrid[y][x]) { ok = false; break; }
-            }
-            if(!ok) break;
-        }
-        if(ok) {
-            if(game.currentFloor > 0) { 
-                game.currentFloor--; 
-                showModal("정답", (game.currentFloor+2) + "F 분석 완료. " + (game.currentFloor+1) + "F 관측을 시작함.", "확인", function(){
-                    document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
-                    userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
-                });
-            } else { 
-                showModal("정답", "모든 층 분석 완료. 지옥을 탈출함.", "새 문제 시작", function(){
-                    location.페이지를 새로고침();
-                }, "메뉴로 가기", function(){
-                    location.페이지를 새로고침();
-                });
-            }
-        } else { 
-            showModal("오답", "데이터 불일치. 구조 재분석 필요함.", "확인");
-        }
-    };
-
-    function showModal(title, msg, btnText, callback, secondaryText, secondaryCallback) {
-        const modal = document.getElementById('custom-modal');
-        if(!modal) return;
-        document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-msg').innerText = msg;
-        const pBtn = document.getElementById('modal-btn-primary');
-        pBtn.innerText = btnText;
-        pBtn.onclick = function() { modal.style.display = 'none'; if(callback) callback(); };
-        
-        const sBtn = document.getElementById('modal-btn-secondary');
-        if(secondaryText) {
-            sBtn.innerText = secondaryText;
-            sBtn.classList.remove('hidden');
-            sBtn.onclick = function() { modal.style.display = 'none'; if(secondaryCallback) secondaryCallback(); };
-        } else {
-            sBtn.classList.add('hidden');
-        }
-        modal.style.display = 'flex';
-    }
-
-    // 전역 이벤트 리스너 등록
-    window.addEventListener('DOMContentLoaded', function() {
-        window.addEventListener('keydown', function(e) {
-            if(e.code === 'Enter' || e.code === 'Space') {
-                const tabSearch = document.getElementById('tab-search');
-                if(tabSearch && tabSearch.classList.contains('tab-active')) {
-                    e.preventDefault();
-                    if(typeof handleAsk === 'function') handleAsk();
+    window.gameControls = {
+        selectObs: function(n) { obsVal = n; if(n === 0) { this.initAndStart(); return; } this.showStep(2); },
+        selectPlay: function(n) { playVal = n; this.showStep(3); },
+        showStep: function(s) { var steps = document.querySelectorAll('.mode-step'); for(var i=0; i<steps.length; i++) steps[i].classList.remove('active'); document.getElementById('step-'+s).classList.add('active'); },
+        initAndStart: function() {
+            game.generate(); document.getElementById('prestage').classList.add('hidden');
+            if(obsVal === 0) { this.renderTest(); return; }
+            document.getElementById('gamestage').classList.remove('hidden');
+            initGrids(); this.setView('TOP'); this.setBrush(1);
+            if(playVal === 2) { document.getElementById('btn-ask').classList.add('hidden'); document.getElementById('btn-next-puzzle').classList.remove('hidden'); }
+        },
+        renderTest: function() {
+            document.getElementById('teststage').classList.remove('hidden');
+            for(var z=0; z<3; z++) {
+                var grid = document.getElementById('test-grid-'+z); grid.innerHTML = '';
+                for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
+                    var c = document.createElement('div'); var val = game.grid[z][y][x];
+                    c.className = 'cube-cell color-'+(val === -1 ? 0 : val);
+                    c.innerText = val === 0 ? '0' : ''; grid.appendChild(c);
                 }
             }
-        });
+        },
+        setView: function(v) {
+            currentView = v; var btns = document.querySelectorAll('.v-btn');
+            btns.forEach(function(b){ b.classList.remove('bg-blue-600', 'text-white'); });
+            var target = document.getElementById('v-'+v); if(target) target.classList.add('bg-blue-600', 'text-white');
+            selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
+            cells.forEach(function(c){ c.classList.remove('selected'); });
+        },
+        setTab: function(t) {
+            document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
+            document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
+            document.getElementById('view-section').classList.toggle('hidden', t!=='search');
+            document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
+        },
+        setBrush: function(c) { 
+            brushColor = c; var tools = document.querySelectorAll('.brush-tool');
+            tools.forEach(function(t){ t.classList.remove('brush-active'); });
+            var target = document.getElementById('brush-'+c); if(target) target.classList.add('brush-active'); 
+        },
+        handleAsk: function() {
+            if(selectedIdx.length < obsVal) return;
+            var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
+            addLog(currentView, selectedIdx, colors);
+            selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
+            cells.forEach(function(c){ c.classList.remove('selected'); });
+        },
+        handlePuzzleNext: function() {
+            var v, picked = [];
+            if(Math.random() < 0.4) {
+                v = 'TOP';
+                if(obsVal === 3) {
+                    var sets = [[1,2,3],[4,5,6],[7,8,9],[1,4,7],[2,5,8],[3,6,9]];
+                    picked = sets[Math.floor(Math.random() * sets.length)];
+                } else { picked = [Math.floor(Math.random() * 9) + 1]; }
+            } else {
+                var sides = ['SOUTH', 'NORTH', 'EAST', 'WEST']; v = sides[Math.floor(Math.random() * 4)];
+                var row = 2 - game.currentFloor;
+                if(obsVal === 3) { picked = [row*3 + 1, row*3 + 2, row*3 + 3]; }
+                else { picked = [row*3 + (Math.floor(Math.random() * 3) + 1)]; }
+            }
+            var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
+            addLog(v, picked, colors);
+        },
+        submitAnswer: function() {
+            var ok = true; 
+            for(var y=0; y<3; y++) {
+                for(var x=0; x<3; x++) {
+                    var real = game.grid[game.currentFloor][y][x];
+                    var target = (real === -1) ? 0 : real;
+                    if(target !== userGrid[y][x]) { ok = false; break; }
+                }
+                if(!ok) break;
+            }
+            if(ok) {
+                if(game.currentFloor > 0) { 
+                    game.currentFloor--; 
+                    showModal("정답", (game.currentFloor+2) + "F 분석 완료. " + (game.currentFloor+1) + "F 관측을 시작함.", "확인", function(){
+                        document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
+                        userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); window.gameControls.setTab('search');
+                    });
+                } else { 
+                    showModal("정답", "모든 층 분석 완료. 지옥을 탈출함.", "새 문제 시작", function(){ location.페이지를 새로고침(); }, "메뉴로 가기", function(){ location.페이지를 새로고침(); });
+                }
+            } else { showModal("오답", "데이터 불일치. 구조 재분석 필요함.", "확인"); }
+        }
+    };
+    window.addEventListener('keydown', function(e) {
+        if(e.code === 'Enter' || e.code === 'Space') {
+            var tabSearch = document.getElementById('tab-search');
+            if(tabSearch && tabSearch.classList.contains('tab-active')) {
+                e.preventDefault();
+                window.gameControls.handleAsk();
+            }
+        }
     });
-
 })();
 </script>
 </body>
