@@ -1,605 +1,303 @@
 <!DOCTYPE html>
-
 <html lang="ko">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>큐브 지옥 (Cube Hell)</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-
-        .cube-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 180px; margin: 0 auto; }
-
-        .cube-cell { aspect-ratio: 1; border: 2px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.2rem; user-select: none; border-radius: 4px; }
-
-        .color-0 { background-color: #f3f4f6; color: #999; }
-
-        .color-1 { background-color: #ef4444; color: white; }
-
-        .color-2 { background-color: #facc15; color: black; }
-
-        .color-3 { background-color: #22c55e; color: white; }
-
-        .color-4 { background-color: #3b82f6; color: white; }
-
-        .selected { outline: 3px solid #000; z-index: 10; transform: scale(1.05); }
-
-        .log-container { height: 480px; overflow-y: auto; }
-
-        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: bold; }
-
-        .mode-step { display: none; }
-
-        .mode-step.active { display: block; }
-
-        .brush-active { border-color: #000 !important; transform: scale(1.1); }
-
-    </style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>큐브 지옥 (Cube Hell)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .cube-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 180px; margin: 0 auto; }
+        .cube-cell { aspect-ratio: 1; border: 2px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.2rem; user-select: none; border-radius: 4px; }
+        .color-0 { background-color: #f3f4f6; color: #999; }
+        .color-1 { background-color: #ef4444; color: white; }
+        .color-2 { background-color: #facc15; color: black; }
+        .color-3 { background-color: #22c55e; color: white; }
+        .color-4 { background-color: #3b82f6; color: white; }
+        .selected { outline: 3px solid #000; z-index: 10; transform: scale(1.05); }
+        .log-container { height: 480px; overflow-y: auto; }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: bold; }
+        .mode-step { display: none; }
+        .mode-step.active { display: block; }
+        .brush-active { border-color: #000 !important; transform: scale(1.1); }
+    </style>
 </head>
-
 <body class="bg-gray-100 min-h-screen p-4 font-sans text-gray-900">
-
 <div id="app" class="max-w-5xl mx-auto bg-white rounded-xl shadow-2xl p-6 border border-gray-200">
-
-    <header class="text-center mb-8 border-b pb-4">
-
-        <h1 class="text-3xl font-extrabold tracking-tighter uppercase">CUBE HELL</h1>
-
-    </header>
-
-    <div id="prestage" class="max-w-md mx-auto py-10">
-
-        <div id="step-1" class="mode-step active space-y-6 text-center">
-
-            <h2 class="text-xl font-bold">1. 관측 단위 설정</h2>
-
-            <div class="grid grid-cols-1 gap-3">
-
-                <button onclick="selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
-
-                <button onclick="selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
-
-                <button onclick="selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold">테스트 모드</button>
-
-            </div>
-
-        </div>
-
-        <div id="step-2" class="mode-step space-y-6 text-center">
-
-            <h2 class="text-xl font-bold">2. 게임 진행 방식</h2>
-
-            <div class="grid grid-cols-1 gap-3">
-
-                <button onclick="selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
-
-                <button onclick="selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
-
-            </div>
-
-        </div>
-
-        <div id="step-3" class="mode-step space-y-8 text-center">
-
-            <h2 class="text-xl font-bold">준비 완료</h2>
-
-            <button onclick="initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase">Game Start</button>
-
-        </div>
-
-    </div>
-
-    <div id="teststage" class="hidden space-y-8">
-
-        <div class="flex justify-between items-center border-b-2 border-red-600 pb-4">
-
-            <h2 class="text-2xl font-black text-red-600 uppercase">Structure Debug</h2>
-
-            <button onclick="location.reload()" class="px-4 py-2 bg-gray-200 rounded font-bold">Menu</button>
-
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-
-            <div><h3 class="font-bold mb-4 uppercase">Layer 3 (Top)</h3><div id="test-grid-2" class="cube-grid"></div></div>
-
-            <div><h3 class="font-bold mb-4 uppercase">Layer 2 (Mid)</h3><div id="test-grid-1" class="cube-grid"></div></div>
-
-            <div><h3 class="font-bold mb-4 uppercase">Layer 1 (Bottom)</h3><div id="test-grid-0" class="cube-grid"></div></div>
-
-        </div>
-
-    </div>
-
-    <div id="gamestage" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-        <div class="lg:col-span-5 space-y-6 border-r pr-6">
-
-            <div class="flex border-b text-sm mb-4">
-
-                <button onclick="setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase">Search</button>
-
-                <button onclick="setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase">Submit</button>
-
-            </div>
-
-            <div id="view-section">
-
-                <div class="mb-6 bg-gray-50 p-4 rounded-xl border">
-
-                    <div class="grid grid-cols-5 gap-1">
-
-                        <button onclick="setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
-
-                        <button onclick="setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
-
-                        <button onclick="setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
-
-                        <button onclick="setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
-
-                        <button onclick="setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
-
-                    </div>
-
-                </div>
-
-                <div class="text-center">
-
-                    <div id="search-grid" class="cube-grid mb-6"></div>
-
-                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask</button>
-
-                    <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
-
-                </div>
-
-            </div>
-
-            <div id="submit-section" class="hidden space-y-6 text-center">
-
-                <div id="target-floor-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase">Target: 3F</div>
-
-                <div id="submit-grid" class="cube-grid mb-8 scale-110"></div>
-
-                <div class="flex justify-center gap-3 bg-gray-50 p-4 rounded-xl border">
-
-                    <button onclick="setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
-
-                    <button onclick="setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool" id="brush-1"></button>
-
-                    <button onclick="setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool" id="brush-2"></button>
-
-                    <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
-
-                    <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
-
-                </div>
-
-                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer</button>
-
-            </div>
-
-        </div>
-
-        <div class="lg:col-span-7 flex flex-col">
-
-            <h3 class="font-black text-xl mb-4 border-b-2 border-gray-900 pb-2 uppercase tracking-widest">Logs</h3>
-
-            <div id="log-list" class="log-container space-y-3">
-
-                <div class="text-center text-gray-300 py-32 italic">No Data.</div>
-
-            </div>
-
-        </div>
-
-    </div>
-
+    <header class="text-center mb-8 border-b pb-4">
+        <h1 class="text-3xl font-extrabold tracking-tighter uppercase">CUBE HELL</h1>
+    </header>
+    <div id="prestage" class="max-w-md mx-auto py-10">
+        <div id="step-1" class="mode-step active space-y-6 text-center">
+            <h2 class="text-xl font-bold">1. 관측 단위 설정</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
+                <button onclick="selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
+                <button onclick="selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold">테스트 모드</button>
+            </div>
+        </div>
+        <div id="step-2" class="mode-step space-y-6 text-center">
+            <h2 class="text-xl font-bold">2. 게임 진행 방식</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
+                <button onclick="selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
+            </div>
+        </div>
+        <div id="step-3" class="mode-step space-y-8 text-center">
+            <h2 class="text-xl font-bold">준비 완료</h2>
+            <button onclick="initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase">Game Start</button>
+        </div>
+    </div>
+    <div id="teststage" class="hidden space-y-8">
+        <div class="flex justify-between items-center border-b-2 border-red-600 pb-4">
+            <h2 class="text-2xl font-black text-red-600 uppercase">Structure Debug</h2>
+            <button onclick="location.페이지를 새로고침()" class="px-4 py-2 bg-gray-200 rounded font-bold">메뉴</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div><h3 class="font-bold mb-4 uppercase">Layer 3 (Top)</h3><div id="test-grid-2" class="cube-grid"></div></div>
+            <div><h3 class="font-bold mb-4 uppercase">Layer 2 (Mid)</h3><div id="test-grid-1" class="cube-grid"></div></div>
+            <div><h3 class="font-bold mb-4 uppercase">Layer 1 (Bottom)</h3><div id="test-grid-0" class="cube-grid"></div></div>
+        </div>
+    </div>
+    <div id="gamestage" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-5 space-y-6 border-r pr-6">
+            <div class="flex border-b text-sm mb-4">
+                <button onclick="setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase">검색하기</button>
+                <button onclick="setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase">Submit</button>
+            </div>
+            <div id="view-section">
+                <div class="mb-6 bg-gray-50 p-4 rounded-xl border">
+                    <div class="grid grid-cols-5 gap-1">
+                        <button onclick="setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
+                        <button onclick="setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
+                        <button onclick="setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
+                        <button onclick="setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
+                        <button onclick="setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div id="search-grid" class="cube-grid mb-6"></div>
+                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask</button>
+                    <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
+                </div>
+            </div>
+            <div id="submit-section" class="hidden space-y-6 text-center">
+                <div id="target-floor-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase">Target: 3F</div>
+                <div id="submit-grid" class="cube-grid mb-8 scale-110"></div>
+                <div class="flex justify-center gap-3 bg-gray-50 p-4 rounded-xl border">
+                    <button onclick="setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
+                    <button onclick="setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool" id="brush-1"></button>
+                    <button onclick="setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool" id="brush-2"></button>
+                    <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
+                    <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
+                </div>
+                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer</button>
+            </div>
+        </div>
+        <div class="lg:col-span-7 flex flex-col">
+            <h3 class="font-black text-xl mb-4 border-b-2 border-gray-900 pb-2 uppercase tracking-widest">Logs</h3>
+            <div id="log-list" class="log-container space-y-3">
+                <div class="text-center text-gray-300 py-32 italic">No Data.</div>
+            </div>
+        </div>
+    </div>
 </div>
-
 <script>
-
 var game = {
-
-    grid: [], occupied: [], currentFloor: 2,
-
-    init: function() { this.grid = []; for(var z=0; z<3; z++) { this.grid[z] = []; for(var y=0; y<3; y++) { this.grid[z][y] = [0, 0, 0]; } } },
-
-    generate: function() {
-
-        var success = false; var limit = 0;
-
-        while(!success && limit < 500) {
-
-            limit++; this.init(); this.occupied = [];
-
-            var candidates = []; for(var x=0; x<3; x++) for(var y=0; y<3; y++) candidates.push({x:x, y:y, z:0});
-
-            while(this.occupied.length < 20 && candidates.length > 0) {
-
-                var idx = Math.floor(Math.random() * candidates.length);
-
-                var p = candidates.splice(idx, 1)[0];
-
-                this.grid[p.z][p.y][p.x] = -1;
-
-                this.occupied.push({x:p.x, y:p.y, z:p.z, color: null});
-
-                if(p.z < 2) candidates.push({x:p.x, y:p.y, z:p.z+1});
-
-            }
-
-            if(this.occupied.length < 20) continue;
-
-            var cSuccess = true;
-
-            for(var c=1; c<=4; c++) {
-
-                var uncolored = this.occupied.filter(function(o){ return o.color === null; });
-
-                if(uncolored.length === 0) { cSuccess = false; break; }
-
-                var start = uncolored[Math.floor(Math.random() * uncolored.length)];
-
-                start.color = c; this.grid[start.z][start.y][start.x] = c;
-
-                for(var j=0; j<4; j++) {
-
-                    var adj = this.getAdj(c); if(adj.length === 0) { cSuccess = false; break; }
-
-                    var next = adj[Math.floor(Math.random() * adj.length)];
-
-                    next.color = c; this.grid[next.z][next.y][next.x] = c;
-
-                }
-
-                if(!cSuccess) break;
-
-            }
-
-            if(cSuccess) success = true;
-
-        }
-
-    },
-
-    getAdj: function(color) {
-
-        var res = []; var self = this;
-
-        this.occupied.filter(function(o){ return o.color === color; }).forEach(function(p){
-
-            var ds = [{x:1,y:0,z:0},{x:-1,y:0,z:0},{x:0,y:1,z:0},{x:0,y:-1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:-1}];
-
-            ds.forEach(function(d){
-
-                var nx=p.x+d.x, ny=p.y+d.y, nz=p.z+d.z;
-
-                if(nx>=0&&nx<3&&ny>=0&&ny<3&&nz>=0&&nz<3) {
-
-                    var f = self.occupied.filter(function(o){ return o.x===nx&&o.y===ny&&o.z===nz&&o.color===null; })[0];
-
-                    if(f) res.push(f);
-
-                }
-
-            });
-
-        });
-
-        return res;
-
-    },
-
-    getRay: function(view, num) {
-
-        var n = num - 1; var cx, cy, cz, dx=0, dy=0, dz=0;
-
-        var rIdx = Math.floor(n / 3); var cIdx = n % 3;
-
-        switch(view) {
-
-            case 'TOP': cx = cIdx; cy = rIdx; cz = 2; dz = -1; break;
-
-            case 'SOUTH': cx = cIdx; cy = 2; cz = 2 - rIdx; dy = -1; break;
-
-            case 'NORTH': cx = 2 - cIdx; cy = 0; cz = 2 - rIdx; dy = 1; break;
-
-            case 'EAST': cx = 2; cy = 2 - cIdx; cz = 2 - rIdx; dx = -1; break;
-
-            case 'WEST': cx = 0; cy = cIdx; cz = 2 - rIdx; dx = 1; break;
-
-        }
-
-        for(var i=0; i<3; i++) {
-
-            if(cx<0||cx>2||cy<0||cy>2||cz<0||cz>2) break;
-
-            var val = this.grid[cz][cy][cx];
-
-            if(val > 0) return val;
-
-            cx += dx; cy += dy; cz += dz;
-
-        }
-
-        return 0;
-
-    }
-
+    grid: [], occupied: [], currentFloor: 2,
+    init: function() { this.grid = []; for(var z=0; z<3; z++) { this.grid[z] = []; for(var y=0; y<3; y++) { this.grid[z][y] = [0, 0, 0]; } } },
+    generate: function() {
+        var success = false; var limit = 0;
+        while(!success && limit < 500) {
+            limit++; this.init(); this.occupied = [];
+            var candidates = []; for(var x=0; x<3; x++) for(var y=0; y<3; y++) candidates.push({x:x, y:y, z:0});
+            while(this.occupied.length < 20 && candidates.length > 0) {
+                var idx = Math.floor(Math.random() * candidates.length);
+                var p = candidates.splice(idx, 1)[0];
+                this.grid[p.z][p.y][p.x] = -1;
+                this.occupied.push({x:p.x, y:p.y, z:p.z, color: null});
+                if(p.z < 2) candidates.push({x:p.x, y:p.y, z:p.z+1});
+            }
+            if(this.occupied.length < 20) continue;
+            var cSuccess = true;
+            for(var c=1; c<=4; c++) {
+                var uncolored = this.occupied.filter(function(o){ return o.color === null; });
+                if(uncolored.length === 0) { cSuccess = false; break; }
+                var start = uncolored[Math.floor(Math.random() * uncolored.length)];
+                start.color = c; this.grid[start.z][start.y][start.x] = c;
+                for(var j=0; j<4; j++) {
+                    var adj = this.getAdj(c); if(adj.length === 0) { cSuccess = false; break; }
+                    var next = adj[Math.floor(Math.random() * adj.length)];
+                    next.color = c; this.grid[next.z][next.y][next.x] = c;
+                }
+                if(!cSuccess) break;
+            }
+            if(cSuccess) success = true;
+        }
+    },
+    getAdj: function(color) {
+        var res = []; var self = this;
+        this.occupied.filter(function(o){ return o.color === color; }).forEach(function(p){
+            var ds = [{x:1,y:0,z:0},{x:-1,y:0,z:0},{x:0,y:1,z:0},{x:0,y:-1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:-1}];
+            ds.forEach(function(d){
+                var nx=p.x+d.x, ny=p.y+d.y, nz=p.z+d.z;
+                if(nx>=0&&nx<3&&ny>=0&&ny<3&&nz>=0&&nz<3) {
+                    var f = self.occupied.filter(function(o){ return o.x===nx&&o.y===ny&&o.z===nz&&o.color===null; })[0];
+                    if(f) res.push(f);
+                }
+            });
+        });
+        return res;
+    },
+    getRay: function(view, num) {
+        var n = num - 1; var cx, cy, cz, dx=0, dy=0, dz=0;
+        var rIdx = Math.floor(n / 3); var cIdx = n % 3;
+        switch(view) {
+            case 'TOP': cx = cIdx; cy = rIdx; cz = 2; dz = -1; break;
+            case 'SOUTH': cx = cIdx; cy = 2; cz = 2 - rIdx; dy = -1; break;
+            case 'NORTH': cx = 2 - cIdx; cy = 0; cz = 2 - rIdx; dy = 1; break;
+            case 'EAST': cx = 2; cy = 2 - cIdx; cz = 2 - rIdx; dx = -1; break;
+            case 'WEST': cx = 0; cy = cIdx; cz = 2 - rIdx; dx = 1; break;
+        }
+        for(var i=0; i<3; i++) {
+            if(cx<0||cx>2||cy<0||cy>2||cz<0||cz>2) break;
+            var val = this.grid[cz][cy][cx];
+            if(val > 0) return val;
+            cx += dx; cy += dy; cz += dz;
+        }
+        return 0;
+    }
 };
-
-
 
 var obsVal = 1, playVal = 1, currentView = 'TOP', selectedIdx = [], brushColor = 1, userGrid = [[0,0,0],[0,0,0],[0,0,0]];
-
 window.selectObs = function(n) { obsVal = n; if(n === 0) { initAndStart(); return; } showStep(2); };
-
 window.selectPlay = function(n) { playVal = n; showStep(3); };
-
 window.showStep = function(s) { var steps = document.querySelectorAll('.mode-step'); for(var i=0; i<steps.length; i++) steps[i].classList.remove('active'); document.getElementById('step-'+s).classList.add('active'); };
-
 window.initAndStart = function() {
-
-    game.generate(); document.getElementById('prestage').classList.add('hidden');
-
-    if(obsVal === 0) { renderTest(); return; }
-
-    document.getElementById('gamestage').classList.remove('hidden');
-
-    initGrids(); setView('TOP'); setBrush(1);
-
-    if(playVal === 2) { document.getElementById('btn-ask').classList.add('hidden'); document.getElementById('btn-next-puzzle').classList.remove('hidden'); }
-
+    game.generate(); document.getElementById('prestage').classList.add('hidden');
+    if(obsVal === 0) { renderTest(); return; }
+    document.getElementById('gamestage').classList.remove('hidden');
+    initGrids(); setView('TOP'); setBrush(1);
+    if(playVal === 2) { document.getElementById('btn-ask').classList.add('hidden'); document.getElementById('btn-next-puzzle').classList.remove('hidden'); }
 };
-
 function renderTest() {
-
-    document.getElementById('teststage').classList.remove('hidden');
-
-    for(var z=0; z<3; z++) {
-
-        var grid = document.getElementById('test-grid-'+z); grid.innerHTML = '';
-
-        for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
-
-            var c = document.createElement('div'); var val = game.grid[z][y][x];
-
-            c.className = 'cube-cell color-'+(val === -1 ? 0 : val);
-
-            c.innerText = val === 0 ? '0' : ''; grid.appendChild(c);
-
-        }
-
-    }
-
+    document.getElementById('teststage').classList.remove('hidden');
+    for(var z=0; z<3; z++) {
+        var grid = document.getElementById('test-grid-'+z); grid.innerHTML = '';
+        for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
+            var c = document.createElement('div'); var val = game.grid[z][y][x];
+            c.className = 'cube-cell color-'+(val === -1 ? 0 : val);
+            c.innerText = val === 0 ? '0' : ''; grid.appendChild(c);
+        }
+    }
 }
-
 function initGrids() {
-
-    var sGrid = document.getElementById('search-grid'); sGrid.innerHTML = '';
-
-    for(var i=1; i<=9; i++) {
-
-        (function(idx){
-
-            var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.innerText = idx;
-
-            c.onclick = function() {
-
-                if(playVal === 2) return;
-
-                var p = selectedIdx.indexOf(idx);
-
-                if(p > -1) { selectedIdx.splice(p, 1); c.classList.remove('selected'); }
-
-                else if(selectedIdx.length < obsVal) { selectedIdx.push(idx); c.classList.add('selected'); }
-
-                else if(obsVal === 1) { 
-
-                    selectedIdx = [idx]; var cells = sGrid.querySelectorAll('.cube-cell');
-
-                    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-
-                    c.classList.add('selected');
-
-                }
-
-            };
-
-            sGrid.appendChild(c);
-
-        })(i);
-
-    }
-
-    var mGrid = document.getElementById('submit-grid'); mGrid.innerHTML = '';
-
-    for(var i=0; i<9; i++) {
-
-        (function(idx){
-
-            var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.id = 'sub-'+idx; c.innerText = 'X';
-
-            c.onclick = function() { 
-
-                var r = Math.floor(idx/3), col = idx%3; userGrid[r][col] = brushColor; 
-
-                c.className = 'cube-cell color-'+brushColor; c.innerText = brushColor===0?'X':''; 
-
-            };
-
-            mGrid.appendChild(c);
-
-        })(i);
-
-    }
-
+    var sGrid = document.getElementById('search-grid'); sGrid.innerHTML = '';
+    for(var i=1; i<=9; i++) {
+        (function(idx){
+            var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.innerText = idx;
+            c.onclick = function() {
+                if(playVal === 2) return;
+                var p = selectedIdx.indexOf(idx);
+                if(p > -1) { selectedIdx.splice(p, 1); c.classList.remove('selected'); }
+                else if(selectedIdx.length < obsVal) { selectedIdx.push(idx); c.classList.add('selected'); }
+                else if(obsVal === 1) { 
+                    selectedIdx = [idx]; var cells = sGrid.querySelectorAll('.cube-cell');
+                    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
+                    c.classList.add('selected');
+                }
+            };
+            sGrid.appendChild(c);
+        })(i);
+    }
+    var mGrid = document.getElementById('submit-grid'); mGrid.innerHTML = '';
+    for(var i=0; i<9; i++) {
+        (function(idx){
+            var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.id = 'sub-'+idx; c.innerText = 'X';
+            c.onclick = function() { 
+                var r = Math.floor(idx/3), col = idx%3; userGrid[r][col] = brushColor; 
+                c.className = 'cube-cell color-'+brushColor; c.innerText = brushColor===0?'X':''; 
+            };
+            mGrid.appendChild(c);
+        })(i);
+    }
 }
-
 window.setView = function(v) {
-
-    currentView = v; var btns = document.querySelectorAll('.v-btn');
-
-    for(var i=0; i<btns.length; i++) btns[i].classList.remove('bg-blue-600', 'text-white');
-
-    document.getElementById('v-'+v).classList.add('bg-blue-600', 'text-white');
-
-    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-
-    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-
+    currentView = v; var btns = document.querySelectorAll('.v-btn');
+    for(var i=0; i<btns.length; i++) btns[i].classList.remove('bg-blue-600', 'text-white');
+    document.getElementById('v-'+v).classList.add('bg-blue-600', 'text-white');
+    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
+    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
 };
-
 window.setTab = function(t) {
-
-    document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
-
-    document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
-
-    document.getElementById('view-section').classList.toggle('hidden', t!=='search');
-
-    document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
-
+    document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
+    document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
+    document.getElementById('view-section').classList.toggle('hidden', t!=='search');
+    document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
 };
-
-window.setBrush = function(c) { 
-
-    brushColor = c; var tools = document.querySelectorAll('.brush-tool');
-
-    for(var i=0; i<tools.length; i++) tools[i].classList.remove('brush-active');
-
-    document.getElementById('brush-'+c).classList.add('brush-active'); 
-
+window.setBrush = function(c) { 
+    brushColor = c; var tools = document.querySelectorAll('.brush-tool');
+    for(var i=0; i<tools.length; i++) tools[i].classList.remove('brush-active');
+    document.getElementById('brush-'+c).classList.add('brush-active'); 
 };
-
 window.handleAsk = function() {
-
-    if(selectedIdx.length < obsVal) return;
-
-    var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
-
-    addLog(currentView, selectedIdx, colors);
-
-    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-
-    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-
+    if(selectedIdx.length < obsVal) return;
+    var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
+    addLog(currentView, selectedIdx, colors);
+    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
+    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
 };
-
 window.handlePuzzleNext = function() {
-
-    var v, picked = [];
-
-    if(Math.random() < 0.4) {
-
-        v = 'TOP';
-
-        if(obsVal === 3) {
-
-            var sets = [[1,2,3],[4,5,6],[7,8,9],[1,4,7],[2,5,8],[3,6,9]];
-
-            picked = sets[Math.floor(Math.random() * sets.length)];
-
-        } else { picked = [Math.floor(Math.random() * 9) + 1]; }
-
-    } else {
-
-        var sides = ['SOUTH', 'NORTH', 'EAST', 'WEST']; v = sides[Math.floor(Math.random() * 4)];
-
-        var row = 2 - game.currentFloor;
-
-        if(obsVal === 3) { picked = [row*3 + 1, row*3 + 2, row*3 + 3]; }
-
-        else { picked = [row*3 + (Math.floor(Math.random() * 3) + 1)]; }
-
-    }
-
-    var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
-
-    addLog(v, picked, colors);
-
+    var v, picked = [];
+    if(Math.random() < 0.4) {
+        v = 'TOP';
+        if(obsVal === 3) {
+            var sets = [[1,2,3],[4,5,6],[7,8,9],[1,4,7],[2,5,8],[3,6,9]];
+            picked = sets[Math.floor(Math.random() * sets.length)];
+        } else { picked = [Math.floor(Math.random() * 9) + 1]; }
+    } else {
+        var sides = ['SOUTH', 'NORTH', 'EAST', 'WEST']; v = sides[Math.floor(Math.random() * 4)];
+        var row = 2 - game.currentFloor;
+        if(obsVal === 3) { picked = [row*3 + 1, row*3 + 2, row*3 + 3]; }
+        else { picked = [row*3 + (Math.floor(Math.random() * 3) + 1)]; }
+    }
+    var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
+    addLog(v, picked, colors);
 };
-
 function addLog(v, idxs, colors) {
-
-    var list = document.getElementById('log-list'); if(list.querySelector('.italic')) list.innerHTML = '';
-
-    var item = document.createElement('div'); 
-
-    item.className = 'bg-white p-4 rounded-xl border-2 border-gray-100 flex justify-between items-center shadow-sm border-l-4 ' + (v==='TOP'?'border-l-blue-500':'border-l-indigo-500');
-
-    var info = document.createElement('div'); info.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2">ID: '+idxs.join(',')+'</span>';
-
-    var res = document.createElement('div'); res.className = 'flex gap-1.5';
-
-    var cnt = {1:0, 2:0, 3:0, 4:0}; for(var i=0; i<colors.length; i++) { if(colors[i]>0) cnt[colors[i]]++; }
-
-    var empty = true;
-
-    for(var c=1; c<=4; c++) {
-
-        for(var k=0; k<cnt[c]; k++) {
-
-            var b = document.createElement('div'); b.className = 'w-6 h-6 rounded-md color-'+c+' border border-black/10 shadow-inner'; 
-
-            res.appendChild(b); empty = false;
-
-        }
-
-    }
-
-    if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
-
-    item.appendChild(정보); item.appendChild(res); list.insertBefore(item, list.firstChild);
-
+    var list = document.getElementById('log-list'); if(list.querySelector('.italic')) list.innerHTML = '';
+    var item = document.createElement('div'); 
+    item.className = 'bg-white p-4 rounded-xl border-2 border-gray-100 flex justify-between items-center shadow-sm border-l-4 ' + (v==='TOP'?'border-l-blue-500':'border-l-indigo-500');
+    var 정보 = document.createElement('div'); 정보.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2">ID: '+idxs.join(',')+'</span>';
+    var res = document.createElement('div'); res.className = 'flex gap-1.5';
+    var cnt = {1:0, 2:0, 3:0, 4:0}; for(var i=0; i<colors.length; i++) { if(colors[i]>0) cnt[colors[i]]++; }
+    var empty = true;
+    for(var c=1; c<=4; c++) {
+        for(var k=0; k<cnt[c]; k++) {
+            var b = document.createElement('div'); b.className = 'w-6 h-6 rounded-md color-'+c+' border border-black/10 shadow-inner'; 
+            res.appendChild(b); empty = false;
+        }
+    }
+    if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
+    item.appendChild(정보); item.appendChild(res); list.insertBefore(item, list.firstChild);
 }
-
 window.submitAnswer = function() {
-
-    var ok = true; 
-
-    for(var y=0; y<3; y++) {
-
-        for(var x=0; x<3; x++) {
-
-            var real = game.grid[game.currentFloor][y][x];
-
-            var target = (real === -1) ? 0 : real;
-
-            if(target !== userGrid[y][x]) { ok = false; break; }
-
-        }
-
-        if(!ok) break;
-
-    }
-
-    if(ok) {
-
-        if(game.currentFloor > 0) { 
-
-            game.currentFloor--; alert('Success: ' + (game.currentFloor+1) + 'F Analysis Start'); 
-
-            document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
-
-            userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
-
-        } else { alert('Clear: Victory'); location.페이지를 새로고침(); }
-
-    } else { alert('Error: Structure Mismatch'); }
-
+    var ok = true; 
+    for(var y=0; y<3; y++) {
+        for(var x=0; x<3; x++) {
+            var real = game.grid[game.currentFloor][y][x];
+            var target = (real === -1) ? 0 : real;
+            if(target !== userGrid[y][x]) { ok = false; break; }
+        }
+        if(!ok) break;
+    }
+    if(ok) {
+        if(game.currentFloor > 0) { 
+            game.currentFloor--; alert('Success: ' + (game.currentFloor+1) + 'F Analysis Start'); 
+            document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
+            userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
+        } else { alert('Clear: Victory'); location.페이지를 새로고침(); }
+    } else { alert('Error: Structure Mismatch'); }
 };
-
 </script>
-
 </body>
-
 </html>
