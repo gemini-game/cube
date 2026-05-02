@@ -199,7 +199,9 @@ function renderTest() {
         for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
             var c = document.createElement('div'); var val = game.grid[z][y][x];
             c.className = 'cube-cell color-'+(val === -1 ? 0 : val);
-            c.innerText = val === 0 ? '0' : ''; grid.appendChild(c);
+            // 디버그 모드에서 -1(빈 공간)은 '0'을 표시하지 않도록 수정 (사용자 요청 반영 원복)
+            c.innerText = ''; 
+            grid.appendChild(c);
         }
     }
 }
