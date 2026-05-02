@@ -3,355 +3,393 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>큐브 지옥 (Cube Hell)</title>
+    <title>CUBE HELL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .cube-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 180px; margin: 0 auto; }
-        .cube-cell { aspect-ratio: 1; border: 2px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 1.2rem; user-select: none; border-radius: 4px; }
+        .cube-cell { aspect-ratio: 1; border: 2px solid #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; border-radius: 4px; transition: all 0.1s; position: relative; }
         .color-0 { background-color: #f3f4f6; color: #999; }
-        .color-1 { background-color: #ef4444; color: white; }
-        .color-2 { background-color: #facc15; color: black; }
-        .color-3 { background-color: #22c55e; color: white; }
-        .color-4 { background-color: #3b82f6; color: white; }
-        .selected { outline: 3px solid #000; z-index: 10; transform: scale(1.05); }
-        .log-container { height: 480px; overflow-y: auto; }
+        .color-1 { background-color: #ef4444; }
+        .color-2 { background-color: #facc15; }
+        .color-3 { background-color: #22c55e; }
+        .color-4 { background-color: #3b82f6; }
+        .selected { outline: 4px solid #000; z-index: 10; transform: scale(1.05); }
+        .log-container { height: 500px; overflow-y: auto; }
         .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: bold; }
         .mode-step { display: none; }
         .mode-step.active { display: block; }
         .brush-active { border-color: #000 !important; transform: scale(1.1); }
-        #custom-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 2rem; border-radius: 1rem; text-align: center; max-width: 400px; width: 90%; }
+        .focused-cell { box-shadow: inset 0 0 0 4px rgba(59, 130, 246, 0.8); background-color: #dbeafe; }
+        #custom-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-body { background: white; padding: 2.5rem; border-radius: 1rem; text-align: center; max-width: 420px; width: 90%; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 font-sans text-gray-900">
+<body class="bg-gray-100 p-4">
 <div id="app" class="max-w-5xl mx-auto bg-white rounded-xl shadow-2xl p-6 border border-gray-200">
     <header class="text-center mb-8 border-b pb-4">
-        <h1 class="text-3xl font-extrabold tracking-tighter uppercase">CUBE HELL</h1>
+        <h1 class="text-3xl font-black tracking-tighter uppercase">CUBE HELL</h1>
     </header>
-    <div id="prestage" class="max-w-md mx-auto py-10">
+    
+    <div id="setup-phase" class="max-w-md mx-auto py-10">
         <div id="step-1" class="mode-step active space-y-6 text-center">
             <h2 class="text-xl font-bold">1. 관측 단위 설정</h2>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="selectObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
-                <button onclick="selectObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
-                <button onclick="selectObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold">테스트 모드</button>
+                <button onclick="window.engine.setObs(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">1개씩 관측</button>
+                <button onclick="window.engine.setObs(3)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">3개씩 관측</button>
+                <button onclick="window.engine.setObs(0)" class="w-full p-4 border-2 border-dashed border-red-300 bg-red-50 text-red-700 rounded-xl font-bold uppercase">Debug Mode</button>
             </div>
         </div>
         <div id="step-2" class="mode-step space-y-6 text-center">
             <h2 class="text-xl font-bold">2. 게임 진행 방식</h2>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="selectPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
-                <button onclick="selectPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
+                <button onclick="window.engine.setPlay(1)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">수동 질문 모드</button>
+                <button onclick="window.engine.setPlay(2)" class="w-full p-4 border-2 rounded-xl hover:border-blue-500 font-bold">자동 힌트 모드</button>
             </div>
         </div>
         <div id="step-3" class="mode-step space-y-8 text-center">
-            <h2 class="text-xl font-bold">준비 완료</h2>
-            <button onclick="initAndStart()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl shadow-lg uppercase">Game Start</button>
+            <h2 class="text-xl font-bold uppercase tracking-widest">Initialization Ready</h2>
+            <button onclick="window.engine.launch()" class="w-full py-4 bg-black text-white font-black rounded-xl text-xl uppercase shadow-xl">Start Analysis</button>
         </div>
     </div>
-    <div id="teststage" class="hidden space-y-8">
-        <div class="flex justify-between items-center border-b-2 border-red-600 pb-4">
-            <h2 class="text-2xl font-black text-red-600 uppercase">Structure Debug</h2>
-            <button onclick="location.reload()" class="px-4 py-2 bg-gray-200 rounded font-bold">Menu</button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div><h3 class="font-bold mb-4 uppercase">Layer 3 (Top)</h3><div id="test-grid-2" class="cube-grid"></div></div>
-            <div><h3 class="font-bold mb-4 uppercase">Layer 2 (Mid)</h3><div id="test-grid-1" class="cube-grid"></div></div>
-            <div><h3 class="font-bold mb-4 uppercase">Layer 1 (Bottom)</h3><div id="test-grid-0" class="cube-grid"></div></div>
-        </div>
-    </div>
-    <div id="gamestage" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+    <div id="game-board" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-5 space-y-6 border-r pr-6">
             <div class="flex border-b text-sm mb-4">
-                <button onclick="setTab('search')" id="tab-search" class="flex-1 py-3 tab-active uppercase">Search</button>
-                <button onclick="setTab('submit')" id="tab-submit" class="flex-1 py-3 uppercase">Submit</button>
+                <button onclick="window.engine.switchTab('scan')" id="tab-scan" class="flex-1 py-3 tab-active uppercase tracking-tighter">Scanning</button>
+                <button onclick="window.engine.switchTab('data')" id="tab-data" class="flex-1 py-3 uppercase tracking-tighter">Data Input</button>
             </div>
-            <div id="view-section">
-                <div class="mb-6 bg-gray-50 p-4 rounded-xl border">
-                    <div class="grid grid-cols-5 gap-1">
-                        <button onclick="setView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
-                        <button onclick="setView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
-                        <button onclick="setView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
-                        <button onclick="setView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
-                        <button onclick="setView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
-                    </div>
+
+            <div id="scan-container">
+                <div class="mb-6 bg-gray-50 p-4 rounded-xl border grid grid-cols-5 gap-1">
+                    <button onclick="window.engine.updateView('TOP')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-TOP">TOP</button>
+                    <button onclick="window.engine.updateView('SOUTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-SOUTH">SOUTH</button>
+                    <button onclick="window.engine.updateView('NORTH')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-NORTH">NORTH</button>
+                    <button onclick="window.engine.updateView('EAST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-EAST">EAST</button>
+                    <button onclick="window.engine.updateView('WEST')" class="v-btn py-2 border rounded bg-white text-xs font-black" id="v-WEST">WEST</button>
                 </div>
-                <div class="text-center">
-                    <div id="search-grid" class="cube-grid mb-6"></div>
-                    <button id="btn-ask" onclick="handleAsk()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg uppercase">Ask (Enter/Space)</button>
-                    <button id="btn-next-puzzle" onclick="handlePuzzleNext()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg uppercase">Next Hint</button>
-                </div>
+                <div id="scan-grid" class="cube-grid mb-6"></div>
+                <button id="btn-request" onclick="window.engine.sendRequest()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black uppercase shadow-lg hover:bg-blue-700">Request Data (Enter)</button>
+                <button id="btn-next-hint" onclick="window.engine.triggerHint()" class="hidden w-full py-4 bg-indigo-600 text-white rounded-xl font-black uppercase shadow-lg">Load Next Hint</button>
+                <p class="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-widest font-bold">Tab: Move / Space: Select / Enter: Submit</p>
             </div>
-            <div id="submit-section" class="hidden space-y-6 text-center">
-                <div id="target-floor-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase">Target: 3F</div>
-                <div id="submit-grid" class="cube-grid mb-8 scale-110"></div>
-                <div class="flex justify-center gap-3 bg-gray-50 p-4 rounded-xl border">
-                    <button onclick="setBrush(0)" class="w-12 h-12 border-4 rounded-xl color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
-                    <button onclick="setBrush(1)" class="w-12 h-12 border-4 rounded-xl color-1 brush-tool" id="brush-1"></button>
-                    <button onclick="setBrush(2)" class="w-12 h-12 border-4 rounded-xl color-2 brush-tool" id="brush-2"></button>
-                    <button onclick="setBrush(3)" class="w-12 h-12 border-4 rounded-xl color-3 brush-tool" id="brush-3"></button>
-                    <button onclick="setBrush(4)" class="w-12 h-12 border-4 rounded-xl color-4 brush-tool" id="brush-4"></button>
+
+            <div id="data-container" class="hidden space-y-6 text-center">
+                <div id="target-label" class="inline-block px-4 py-1 bg-red-600 text-white rounded-full text-xs font-black mb-4 uppercase">Layer: 3F</div>
+                <div id="input-grid" class="cube-grid mb-8 scale-110"></div>
+                <div class="flex justify-center gap-2 bg-gray-50 p-4 rounded-xl border">
+                    <button onclick="window.engine.setBrush(0)" class="w-10 h-10 border-2 rounded-lg color-0 flex items-center justify-center font-black brush-tool" id="brush-0">X</button>
+                    <button onclick="window.engine.setBrush(1)" class="w-10 h-10 border-2 rounded-lg color-1 brush-tool" id="brush-1"></button>
+                    <button onclick="window.engine.setBrush(2)" class="w-10 h-10 border-2 rounded-lg color-2 brush-tool" id="brush-2"></button>
+                    <button onclick="window.engine.setBrush(3)" class="w-10 h-10 border-2 rounded-lg color-3 brush-tool" id="brush-3"></button>
+                    <button onclick="window.engine.setBrush(4)" class="w-10 h-10 border-2 rounded-lg color-4 brush-tool" id="brush-4"></button>
                 </div>
-                <button onclick="submitAnswer()" class="w-full mt-8 py-4 bg-red-600 text-white rounded-xl font-black text-lg uppercase">Submit Answer</button>
+                <button onclick="window.engine.verify()" class="w-full mt-4 py-4 bg-red-600 text-white rounded-xl font-black uppercase shadow-lg">Submit Final Data</button>
             </div>
         </div>
+
         <div class="lg:col-span-7 flex flex-col">
-            <h3 class="font-black text-xl mb-4 border-b-2 border-gray-900 pb-2 uppercase tracking-widest">Logs</h3>
-            <div id="log-list" class="log-container space-y-3">
-                <div class="text-center text-gray-300 py-32 italic">No Data.</div>
+            <h3 class="font-black text-xl mb-4 border-b-2 border-gray-900 pb-2 uppercase tracking-tighter">Scanning Logs</h3>
+            <div id="log-list" class="log-container space-y-2">
+                <div class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest italic">No Records Found</div>
             </div>
         </div>
+    </div>
+
+    <div id="debug-stage" class="hidden space-y-8">
+        <div class="flex justify-between items-center border-b-4 border-red-600 pb-2">
+            <h2 class="text-2xl font-black text-red-600 uppercase">System Integrity Check</h2>
+            <button onclick="location.reload()" class="px-6 py-2 bg-gray-200 rounded font-black hover:bg-gray-300 uppercase">Back</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="debug-view"></div>
     </div>
 </div>
 
 <div id="custom-modal">
-    <div class="modal-content">
-        <h2 id="modal-title" class="text-2xl font-black mb-4"></h2>
-        <p id="modal-msg" class="mb-6 font-bold text-gray-600"></p>
-        <div id="modal-actions" class="flex flex-col gap-2">
-            <button id="modal-btn-primary" class="w-full py-3 bg-black text-white rounded-lg font-bold uppercase"></button>
-            <button id="modal-btn-secondary" class="hidden w-full py-3 border rounded-lg font-bold uppercase"></button>
+    <div class="modal-body">
+        <h2 id="modal-head" class="text-2xl font-black mb-4 uppercase tracking-tighter"></h2>
+        <p id="modal-desc" class="mb-8 font-bold text-gray-500 leading-relaxed"></p>
+        <div id="modal-ctrl" class="flex flex-col gap-2">
+            <button id="modal-main-btn" class="w-full py-4 bg-black text-white rounded-lg font-black uppercase shadow-lg"></button>
+            <button id="modal-sub-btn" class="hidden w-full py-4 border-2 rounded-lg font-black uppercase text-gray-400"></button>
         </div>
     </div>
 </div>
 
 <script>
-var game = {
-    grid: [], occupied: [], currentFloor: 2,
-    init: function() { this.grid = []; for(var z=0; z<3; z++) { this.grid[z] = []; for(var y=0; y<3; y++) { this.grid[z][y] = [0, 0, 0]; } } },
-    generate: function() {
-        var success = false; var limit = 0;
-        while(!success && limit < 500) {
-            limit++; this.init(); this.occupied = [];
-            var candidates = []; for(var x=0; x<3; x++) for(var y=0; y<3; y++) candidates.push({x:x, y:y, z:0});
-            while(this.occupied.length < 20 && candidates.length > 0) {
-                var idx = Math.floor(Math.random() * candidates.length);
-                var p = candidates.splice(idx, 1)[0];
-                this.grid[p.z][p.y][p.x] = -1;
-                this.occupied.push({x:p.x, y:p.y, z:p.z, color: null});
-                if(p.z < 2) candidates.push({x:p.x, y:p.y, z:p.z+1});
+(function() {
+    "use strict";
+
+    var core = {
+        matrix: [], activeCells: [], currentLv: 2,
+        clear: function() { this.matrix = Array.from({length:3}, () => Array.from({length:3}, () => [0,0,0])); },
+        build: function() {
+            var valid = false;
+            while(!valid) {
+                this.clear(); this.activeCells = [];
+                var pool = [];
+                for(var x=0; x<3; x++) for(var y=0; y<3; y++) pool.push({x:x, y:y, z:0});
+                while(this.activeCells.length < 20 && pool.length > 0) {
+                    var idx = Math.floor(Math.random() * pool.length);
+                    var p = pool.splice(idx, 1)[0];
+                    this.matrix[p.z][p.y][p.x] = -1;
+                    this.activeCells.push({x:p.x, y:p.y, z:p.z, color: null});
+                    if(p.z < 2) pool.push({x:p.x, y:p.y, z:p.z+1});
+                }
+                if(this.activeCells.length < 20) continue;
+                var colorSuccess = true;
+                for(var c=1; c<=4; c++) {
+                    var targetPool = this.activeCells.filter(function(o){ return o.color === null; });
+                    if(targetPool.length === 0) { colorSuccess = false; break; }
+                    var head = targetPool[Math.floor(Math.random() * targetPool.length)];
+                    head.color = c; this.matrix[head.z][head.y][head.x] = c;
+                    for(var j=0; j<4; j++) {
+                        var neighbors = this.seek(c);
+                        if(neighbors.length === 0) { colorSuccess = false; break; }
+                        var next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        next.color = c; this.matrix[next.z][next.y][next.x] = c;
+                    }
+                    if(!colorSuccess) break;
+                }
+                if(colorSuccess) valid = true;
             }
-            if(this.occupied.length < 20) continue;
-            var cSuccess = true;
-            for(var c=1; c<=4; c++) {
-                var uncolored = this.occupied.filter(function(o){ return o.color === null; });
-                if(uncolored.length === 0) { cSuccess = false; break; }
-                var start = uncolored[Math.floor(Math.random() * uncolored.length)];
-                start.color = c; this.grid[start.z][start.y][start.x] = c;
-                for(var j=0; j<4; j++) {
-                    var adj = this.getAdj(c); if(adj.length === 0) { cSuccess = false; break; }
-                    var next = adj[Math.floor(Math.random() * adj.length)];
-                    next.color = c; this.grid[next.z][next.y][next.x] = c;
-                }
-                if(!cSuccess) break;
+        },
+        seek: function(c) {
+            var res = []; var self = this;
+            this.activeCells.filter(function(o){ return o.color === c; }).forEach(function(p){
+                var directions = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+                directions.forEach(function(d){
+                    var nx=p.x+d[0], ny=p.y+d[1], nz=p.z+d[2];
+                    if(nx>=0&&nx<3&&ny>=0&&ny<3&&nz>=0&&nz<3) {
+                        var match = self.activeCells.find(function(o){ return o.x===nx&&o.y===ny&&o.z===nz&&o.color===null; });
+                        if(match) res.push(match);
+                    }
+                });
+            });
+            return res;
+        },
+        scanRay: function(v, id) {
+            var n = id - 1; var r = Math.floor(n/3), c = n%3;
+            var cx, cy, cz, dx=0, dy=0, dz=0;
+            if(v==='TOP'){ cx=c; cy=r; cz=2; dz=-1; }
+            else if(v==='SOUTH'){ cx=c; cy=2; cz=2-r; dy=-1; }
+            else if(v==='NORTH'){ cx=2-c; cy=0; cz=2-r; dy=1; }
+            else if(v==='EAST'){ cx=2; cy=2-c; cz=2-r; dx=-1; }
+            else if(v==='WEST'){ cx=0; cy=c; cz=2-r; dx=1; }
+            for(var i=0; i<3; i++){
+                if(cx<0||cx>2||cy<0||cy>2||cz<0||cz>2) break;
+                // If a cell is found, return its value. Since cleared layers are set to 0, ray passes through them.
+                if(this.matrix[cz][cy][cx]>0) return this.matrix[cz][cy][cx];
+                cx+=dx; cy+=dy; cz+=dz;
             }
-            if(cSuccess) success = true;
-        }
-    },
-    getAdj: function(color) {
-        var res = []; var self = this;
-        this.occupied.filter(function(o){ return o.color === color; }).forEach(function(p){
-            var ds = [{x:1,y:0,z:0},{x:-1,y:0,z:0},{x:0,y:1,z:0},{x:0,y:-1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:-1}];
-            ds.forEach(function(d){
-                var nx=p.x+d.x, ny=p.y+d.y, nz=p.z+d.z;
-                if(nx>=0&&nx<3&&ny>=0&&ny<3&&nz>=0&&nz<3) {
-                    var f = self.occupied.filter(function(o){ return o.x===nx&&o.y===ny&&o.z===nz&&o.color===null; })[0];
-                    if(f) res.push(f);
+            return 0;
+        },
+        clearLayer: function(lv) {
+            // Set all cells in the specified level to 0 to simulate removal/transparency
+            for(var y=0; y<3; y++) {
+                for(var x=0; x<3; x++) {
+                    this.matrix[lv][y][x] = 0;
                 }
+            }
+            // Update activeCells list to maintain consistency if needed
+            this.activeCells = this.activeCells.filter(function(cell) {
+                return cell.z !== lv;
             });
-        });
-        return res;
-    },
-    getRay: function(view, num) {
-        var n = num - 1; var cx, cy, cz, dx=0, dy=0, dz=0;
-        var rIdx = Math.floor(n / 3); var cIdx = n % 3;
-        switch(view) {
-            case 'TOP': cx = cIdx; cy = rIdx; cz = 2; dz = -1; break;
-            case 'SOUTH': cx = cIdx; cy = 2; cz = 2 - rIdx; dy = -1; break;
-            case 'NORTH': cx = 2 - cIdx; cy = 0; cz = 2 - rIdx; dy = 1; break;
-            case 'EAST': cx = 2; cy = 2 - cIdx; cz = 2 - rIdx; dx = -1; break;
-            case 'WEST': cx = 0; cy = cIdx; cz = 2 - rIdx; dx = 1; break;
         }
-        for(var i=0; i<3; i++) {
-            if(cx<0||cx>2||cy<0||cy>2||cz<0||cz>2) break;
-            var val = this.grid[cz][cy][cx];
-            if(val > 0) return val;
-            cx += dx; cy += dy; cz += dz;
+    };
+
+    var obsCount = 1, playType = 1, currentV = 'TOP', selectedNodes = [], activeBrush = 1;
+    var userBuffer = [[0,0,0],[0,0,0],[0,0,0]];
+    var focusIdx = -1;
+
+    function popup(head, desc, btn, fn, subBtn, subFn) {
+        var m = document.getElementById('custom-modal');
+        document.getElementById('modal-head').innerText = head;
+        document.getElementById('modal-desc').innerText = desc;
+        var p = document.getElementById('modal-main-btn');
+        p.innerText = btn; p.onclick = function(){ m.style.display='none'; if(fn) fn(); };
+        var s = document.getElementById('modal-sub-btn');
+        if(subBtn) { s.innerText=subBtn; s.classList.remove('hidden'); s.onclick=function(){ m.style.display='none'; if(subFn) subFn(); }; }
+        else { s.classList.add('hidden'); }
+        m.style.display = 'flex';
+    }
+
+    function syncGrids() {
+        var s = document.getElementById('scan-grid'); s.innerHTML = '';
+        for(var i=1; i<=9; i++) {
+            (function(id){
+                var el = document.createElement('div'); el.className = 'cube-cell color-0'; el.innerText = id;
+                el.id = 'scan-cell-' + id;
+                el.onclick = function() {
+                    if(playType === 2) return;
+                    var pos = selectedNodes.indexOf(id);
+                    if(pos > -1) { selectedNodes.splice(pos, 1); el.classList.remove('selected'); }
+                    else if(selectedNodes.length < obsCount) { selectedNodes.push(id); el.classList.add('selected'); }
+                    else if(obsCount === 1) {
+                        selectedNodes = [id];
+                        document.querySelectorAll('#scan-grid .cube-cell').forEach(function(c){ c.classList.remove('selected'); });
+                        el.classList.add('selected');
+                    }
+                };
+                s.appendChild(el);
+            })(i);
         }
-        return 0;
-    }
-};
-
-var obsVal = 1, playVal = 1, currentView = 'TOP', selectedIdx = [], brushColor = 1, userGrid = [[0,0,0],[0,0,0],[0,0,0]];
-
-window.addEventListener('keydown', function(e) {
-    if(e.code === 'Enter' || e.code === 'Space') {
-        const tabSearch = document.getElementById('tab-search');
-        if(tabSearch && tabSearch.classList.contains('tab-active')) {
-            e.preventDefault();
-            handleAsk();
-        }
-    }
-});
-
-function showModal(title, msg, btnText, callback, secondaryText, secondaryCallback) {
-    const modal = document.getElementById('custom-modal');
-    document.getElementById('modal-title').innerText = title;
-    document.getElementById('modal-msg').innerText = msg;
-    const pBtn = document.getElementById('modal-btn-primary');
-    pBtn.innerText = btnText;
-    pBtn.onclick = function() { modal.style.display = 'none'; if(callback) callback(); };
-    
-    const sBtn = document.getElementById('modal-btn-secondary');
-    if(secondaryText) {
-        sBtn.innerText = secondaryText;
-        sBtn.classList.remove('hidden');
-        sBtn.onclick = function() { modal.style.display = 'none'; if(secondaryCallback) secondaryCallback(); };
-    } else {
-        sBtn.classList.add('hidden');
-    }
-    modal.style.display = 'flex';
-}
-
-window.selectObs = function(n) { obsVal = n; if(n === 0) { initAndStart(); return; } showStep(2); };
-window.selectPlay = function(n) { playVal = n; showStep(3); };
-window.showStep = function(s) { var steps = document.querySelectorAll('.mode-step'); for(var i=0; i<steps.length; i++) steps[i].classList.remove('active'); document.getElementById('step-'+s).classList.add('active'); };
-window.initAndStart = function() {
-    game.generate(); document.getElementById('prestage').classList.add('hidden');
-    if(obsVal === 0) { renderTest(); return; }
-    document.getElementById('gamestage').classList.remove('hidden');
-    initGrids(); setView('TOP'); setBrush(1);
-    if(playVal === 2) { document.getElementById('btn-ask').classList.add('hidden'); document.getElementById('btn-next-puzzle').classList.remove('hidden'); }
-};
-function renderTest() {
-    document.getElementById('teststage').classList.remove('hidden');
-    for(var z=0; z<3; z++) {
-        var grid = document.getElementById('test-grid-'+z); grid.innerHTML = '';
-        for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
-            var c = document.createElement('div'); var val = game.grid[z][y][x];
-            c.className = 'cube-cell color-'+(val === -1 ? 0 : val);
-            c.innerText = val === 0 ? '0' : ''; grid.appendChild(c);
+        var iG = document.getElementById('input-grid'); iG.innerHTML = '';
+        for(var i=0; i<9; i++) {
+            (function(idx){
+                var el = document.createElement('div'); el.className = 'cube-cell color-0'; el.innerText = 'X';
+                el.onclick = function() {
+                    var r = Math.floor(idx/3), c = idx%3; userBuffer[r][c] = activeBrush;
+                    el.className = 'cube-cell color-' + activeBrush;
+                    el.innerText = activeBrush === 0 ? 'X' : '';
+                };
+                iG.appendChild(el);
+            })(i);
         }
     }
-}
-function initGrids() {
-    var sGrid = document.getElementById('search-grid'); sGrid.innerHTML = '';
-    for(var i=1; i<=9; i++) {
-        (function(idx){
-            var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.innerText = idx;
-            c.onclick = function() {
-                if(playVal === 2) return;
-                var p = selectedIdx.indexOf(idx);
-                if(p > -1) { selectedIdx.splice(p, 1); c.classList.remove('selected'); }
-                else if(selectedIdx.length < obsVal) { selectedIdx.push(idx); c.classList.add('selected'); }
-                else if(obsVal === 1) { 
-                    selectedIdx = [idx]; var cells = sGrid.querySelectorAll('.cube-cell');
-                    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-                    c.classList.add('selected');
+
+    function pushLog(v, ids, results) {
+        var list = document.getElementById('log-list');
+        if(list.querySelector('.italic')) list.innerHTML = '';
+        var entry = document.createElement('div');
+        entry.className = 'bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm flex justify-between items-center transition-all hover:translate-x-1';
+        var info = '<div><strong class="text-gray-900">['+v+']</strong> <span class="text-xs text-gray-400 font-mono ml-2 uppercase">ID: '+ids.join(',')+'</span></div>';
+        var signals = '<div class="flex gap-1.5">';
+        var valid = results.filter(function(c){ return c > 0; }).sort();
+        valid.forEach(function(c){ signals += '<div class="w-6 h-6 rounded-md color-'+c+' border border-black/10 shadow-inner"></div>'; });
+        if(valid.length === 0) signals += '<span class="text-xs text-gray-300 font-black uppercase tracking-widest">Null-Signal</span>';
+        signals += '</div>';
+        entry.innerHTML = info + signals;
+        list.prepend(entry);
+    }
+
+    window.engine = {
+        setObs: function(n) { obsCount = n; if(n===0) { core.build(); this.showDebug(); return; } this.nextStep(2); },
+        setPlay: function(n) { playType = n; this.nextStep(3); },
+        nextStep: function(s) { 
+            document.querySelectorAll('.mode-step').forEach(function(el){ el.classList.remove('active'); });
+            document.getElementById('step-'+s).classList.add('active'); 
+        },
+        launch: function() {
+            core.build();
+            document.getElementById('setup-phase').classList.add('hidden');
+            document.getElementById('game-board').classList.remove('hidden');
+            if(playType === 2) {
+                document.getElementById('btn-request').classList.add('hidden');
+                document.getElementById('btn-next-hint').classList.remove('hidden');
+            }
+            syncGrids(); this.updateView('TOP'); this.setBrush(1);
+        },
+        showDebug: function() {
+            document.getElementById('setup-phase').classList.add('hidden');
+            var d = document.getElementById('debug-stage'); d.classList.remove('hidden');
+            var v = document.getElementById('debug-view'); v.innerHTML = '';
+            for(var z=2; z>=0; z--) {
+                var box = document.createElement('div');
+                box.innerHTML = '<h3 class="text-center font-black mb-4 uppercase text-gray-400">'+(z+1)+'F (Layer)</h3>';
+                var g = document.createElement('div'); g.className = 'cube-grid';
+                for(var y=0; y<3; y++) for(var x=0; x<3; x++) {
+                    var val = core.matrix[z][y][x];
+                    var c = document.createElement('div');
+                    c.className = 'cube-cell color-' + (val===-1?0:val);
+                    c.innerText = val === 0 ? '0' : ''; g.appendChild(c);
                 }
-            };
-            sGrid.appendChild(c);
-        })(i);
-    }
-    var mGrid = document.getElementById('submit-grid'); mGrid.innerHTML = '';
-    for(var i=0; i<9; i++) {
-        (function(idx){
-            var c = document.createElement('div'); c.className = 'cube-cell color-0'; c.id = 'sub-'+idx; c.innerText = 'X';
-            c.onclick = function() { 
-                var r = Math.floor(idx/3), col = idx%3; userGrid[r][col] = brushColor; 
-                c.className = 'cube-cell color-'+brushColor; c.innerText = brushColor===0?'X':''; 
-            };
-            mGrid.appendChild(c);
-        })(i);
-    }
-}
-window.setView = function(v) {
-    currentView = v; var btns = document.querySelectorAll('.v-btn');
-    for(var i=0; i<btns.length; i++) btns[i].classList.remove('bg-blue-600', 'text-white');
-    document.getElementById('v-'+v).classList.add('bg-blue-600', 'text-white');
-    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-};
-window.setTab = function(t) {
-    document.getElementById('tab-search').classList.toggle('tab-active', t==='search');
-    document.getElementById('tab-submit').classList.toggle('tab-active', t==='submit');
-    document.getElementById('view-section').classList.toggle('hidden', t!=='search');
-    document.getElementById('submit-section').classList.toggle('hidden', t!=='submit');
-};
-window.setBrush = function(c) { 
-    brushColor = c; var tools = document.querySelectorAll('.brush-tool');
-    for(var i=0; i<tools.length; i++) tools[i].classList.remove('brush-active');
-    document.getElementById('brush-'+c).classList.add('brush-active'); 
-};
-window.handleAsk = function() {
-    if(selectedIdx.length < obsVal) return;
-    var colors = []; for(var i=0; i<selectedIdx.length; i++) colors.push(game.getRay(currentView, selectedIdx[i]));
-    addLog(currentView, selectedIdx, colors);
-    selectedIdx = []; var cells = document.querySelectorAll('#search-grid .cube-cell');
-    for(var j=0; j<cells.length; j++) cells[j].classList.remove('selected');
-};
-window.handlePuzzleNext = function() {
-    var v, picked = [];
-    if(Math.random() < 0.4) {
-        v = 'TOP';
-        if(obsVal === 3) {
-            var sets = [[1,2,3],[4,5,6],[7,8,9],[1,4,7],[2,5,8],[3,6,9]];
-            picked = sets[Math.floor(Math.random() * sets.length)];
-        } else { picked = [Math.floor(Math.random() * 9) + 1]; }
-    } else {
-        var sides = ['SOUTH', 'NORTH', 'EAST', 'WEST']; v = sides[Math.floor(Math.random() * 4)];
-        var row = 2 - game.currentFloor;
-        if(obsVal === 3) { picked = [row*3 + 1, row*3 + 2, row*3 + 3]; }
-        else { picked = [row*3 + (Math.floor(Math.random() * 3) + 1)]; }
-    }
-    var colors = []; for(var j=0; j<picked.length; j++) colors.push(game.getRay(v, picked[j]));
-    addLog(v, picked, colors);
-};
-function addLog(v, idxs, colors) {
-    var list = document.getElementById('log-list'); if(list.querySelector('.italic')) list.innerHTML = '';
-    var item = document.createElement('div'); 
-    item.className = 'bg-white p-4 rounded-xl border-2 border-gray-100 flex justify-between items-center shadow-sm border-l-4 ' + (v==='TOP'?'border-l-blue-500':'border-l-indigo-500');
-    var info = document.createElement('div'); info.innerHTML = '<span class="font-black text-gray-800">['+v+']</span> <span class="text-gray-400 font-mono ml-2">ID: '+idxs.join(',')+'</span>';
-    var res = document.createElement('div'); res.className = 'flex gap-1.5';
-    var cnt = {1:0, 2:0, 3:0, 4:0}; for(var i=0; i<colors.length; i++) { if(colors[i]>0) cnt[colors[i]]++; }
-    var empty = true;
-    for(var c=1; c<=4; c++) {
-        for(var k=0; k<cnt[c]; k++) {
-            var b = document.createElement('div'); b.className = 'w-6 h-6 rounded-md color-'+c+' border border-black/10 shadow-inner'; 
-            res.appendChild(b); empty = false;
+                box.appendChild(g); v.appendChild(box);
+            }
+        },
+        updateView: function(v) {
+            currentV = v;
+            document.querySelectorAll('.v-btn').forEach(function(b){ b.classList.remove('bg-blue-600', 'text-white'); });
+            document.getElementById('v-'+v).classList.add('bg-blue-600', 'text-white');
+            selectedNodes = []; document.querySelectorAll('#scan-grid .cube-cell').forEach(function(c){ c.classList.remove('selected'); });
+            focusIdx = -1;
+        },
+        switchTab: function(t) {
+            document.getElementById('tab-scan').classList.toggle('tab-active', t==='scan');
+            document.getElementById('tab-data').classList.toggle('tab-active', t==='data');
+            document.getElementById('scan-container').classList.toggle('hidden', t!=='scan');
+            document.getElementById('data-container').classList.toggle('hidden', t!=='data');
+            focusIdx = -1;
+        },
+        setBrush: function(c) {
+            activeBrush = c;
+            document.querySelectorAll('.brush-tool').forEach(function(b){ b.classList.remove('brush-active'); });
+            document.getElementById('brush-'+c).classList.add('brush-active');
+        },
+        sendRequest: function() {
+            if(selectedNodes.length < (obsCount || 1)) return;
+            var res = selectedNodes.map(function(id){ return core.scanRay(currentV, id); });
+            pushLog(currentV, selectedNodes, res);
+            selectedNodes = []; document.querySelectorAll('#scan-grid .cube-cell').forEach(function(c){ c.classList.remove('selected'); });
+        },
+        triggerHint: function() {
+            var vList = ['TOP','SOUTH','NORTH','EAST','WEST'], v = vList[Math.floor(Math.random()*5)];
+            var batch = [];
+            if(obsCount === 3) { var s = Math.floor(Math.random()*3)*3 + 1; batch = [s, s+1, s+2]; }
+            else { batch = [Math.floor(Math.random()*9)+1]; }
+            pushLog(v, batch, batch.map(function(id){ return core.scanRay(v, id); }));
+        },
+        verify: function() {
+            var correct = true;
+            for(var y=0; y<3; y++) {
+                for(var x=0; x<3; x++) {
+                    var real = core.matrix[core.currentLv][y][x];
+                    var target = real === -1 ? 0 : real;
+                    if(userBuffer[y][x] !== target) { correct = false; break; }
+                }
+                if(!correct) break;
+            }
+            if(correct) {
+                // CLEAR CURRENT LAYER IN DATA CORE
+                core.clearLayer(core.currentLv);
+                
+                if(core.currentLv > 0) {
+                    popup("ANALYSIS COMPLETE", (core.currentLv+1)+"F 구조 파악 성공 및 제거 완료. " + core.currentLv + "F 분석을 시작함.", "NEXT LAYER", function(){
+                        core.currentLv--;
+                        document.getElementById('target-label').innerText = 'Layer: '+(core.currentLv+1)+'F';
+                        userBuffer = [[0,0,0],[0,0,0],[0,0,0]]; syncGrids(); window.engine.switchTab('scan');
+                    });
+                } else { popup("MISSION CLEAR", "모든 층의 데이터 복구 완료. 시스템 탈출 성공.", "RESTART", function(){ location.reload(); }); }
+            } else { popup("INTEGRITY ERROR", "입력된 데이터가 실제 구조와 일치하지 않음. 재분석 권장.", "RETRY"); }
         }
-    }
-    if(empty) res.innerHTML = '<span class="text-xs text-gray-300 font-bold tracking-widest uppercase">NULL</span>';
-    item.appendChild(info); item.appendChild(res); list.insertBefore(item, list.firstChild);
-}
-window.submitAnswer = function() {
-    var ok = true; 
-    for(var y=0; y<3; y++) {
-        for(var x=0; x<3; x++) {
-            var real = game.grid[game.currentFloor][y][x];
-            var target = (real === -1) ? 0 : real;
-            if(target !== userGrid[y][x]) { ok = false; break; }
+    };
+
+    window.addEventListener('keydown', function(e) {
+        if(document.getElementById('game-board').classList.contains('hidden')) return;
+        
+        if(document.getElementById('tab-scan').classList.contains('tab-active')) {
+            var cells = document.querySelectorAll('#scan-grid .cube-cell');
+            
+            if(e.key === 'Tab') {
+                e.preventDefault();
+                cells.forEach(function(c){ c.classList.remove('focused-cell'); });
+                focusIdx = (focusIdx + 1) % 9;
+                cells[focusIdx].classList.add('focused-cell');
+            } 
+            else if(e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                if(focusIdx > -1) {
+                    cells[focusIdx].click();
+                    if(obsCount > 1 && selectedNodes.length === obsCount) {
+                        window.engine.sendRequest();
+                        focusIdx = -1;
+                        cells.forEach(function(c){ c.classList.remove('focused-cell'); });
+                    }
+                }
+            }
+            else if(e.key === 'Enter') {
+                e.preventDefault();
+                if(selectedNodes.length >= (obsCount || 1)) {
+                    window.engine.sendRequest();
+                } else if(focusIdx > -1) {
+                    cells[focusIdx].click();
+                    if(selectedNodes.length === (obsCount || 1)) window.engine.sendRequest();
+                }
+            }
         }
-        if(!ok) break;
-    }
-    if(ok) {
-        if(game.currentFloor > 0) { 
-            game.currentFloor--; 
-            showModal("정답", (game.currentFloor+2) + "F 분석 완료. " + (game.currentFloor+1) + "F 관측을 시작함.", "확인", function(){
-                document.getElementById('target-floor-label').innerText = 'Target: '+(game.currentFloor+1)+'F'; 
-                userGrid = [[0,0,0],[0,0,0],[0,0,0]]; initGrids(); setTab('search');
-            });
-        } else { 
-            showModal("정답", "모든 층 분석 완료. 지옥을 탈출함.", "새 문제 시작", function(){
-                location.페이지를 새로고침();
-            }, "메뉴로 가기", function(){
-                location.페이지를 새로고침();
-            });
-        }
-    } else { 
-        showModal("오답", "데이터 불일치. 구조 재분석 필요함.", "확인");
-    }
-};
+    });
+
+    console.log("CUBE HELL ENGINE ACTIVATED");
+})();
 </script>
 </body>
 </html>
